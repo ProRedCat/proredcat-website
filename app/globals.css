@@ -8,7 +8,7 @@
 }
 
 body {
-    color: rgb(var(--foreground-rgb));
+    /*color: rgb(var(--foreground-rgb));*/
     background: rgb(var(--background-rgb));
 }
 
@@ -18,6 +18,6 @@ body {
     }
 
     body {
-        @apply font-sans;
+        @apply font-sans text-primary-navy-dark;
     }
 }

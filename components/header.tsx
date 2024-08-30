@@ -6,6 +6,10 @@ import {PageNav} from "@/components/page-nav";
 export function Header() {
     return (
         <header className="z-10 sticky top-0 w-full">
+            <link rel="preconnect" href="https://fonts.googleapis.com"/>
+            <link rel="preconnect" href="https://fonts.gstatic.com"/>
+            <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
+                  rel="stylesheet"/>
             <div
                 className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between border-b-4 border-orange-secondary">
                 <div className="flex-1">
