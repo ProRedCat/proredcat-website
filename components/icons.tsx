@@ -20,6 +20,12 @@ export const Icons = {
         </svg>
     ),
     Profile: (props: IconProps) => (
-        <Image src="/prc.webp" alt="Example Image" width={32} height={32} className="rounded-full" />
+        <svg viewBox="0 0 64 64" {...props}>
+            <rect x="0" y="0" width="64" height="64" fill="white" stroke="black" strokeWidth="2"/>
+            <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontFamily="Times New Roman"
+                  fontSize="32" fill="black">RO
+            </text>
+        </svg>
+
     )
 };
