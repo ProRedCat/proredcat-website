@@ -14,16 +14,16 @@ export function Header() {
                     <nav className="flex items-center space-x-2">
                         <Link
                             href={siteConfig.links.github}
-                            className="pb-2 pt-2 bg-no-repeat bg-bottom hover:bg-[url('/wave.svg')]"
+                            className="pb-2 pt-2"
                         >
-                            <Icons.GitHub className="h-8 w-8"/>
+                            <Icons.GitHub className="h-10 w-10"/>
                             <span className="sr-only">GitHub</span>
                         </Link>
                         <Link
                             href={siteConfig.links.linkedin}
-                            className="pb-2 pt-2 bg-no-repeat bg-bottom hover:bg-[url('/wave.svg')]"
+                            className="pb-2 pt-2"
                         >
-                            <Icons.LinkedIn className="h-8 w-8"/>
+                            <Icons.LinkedIn className="h-10 w-10"/>
                             <span className="sr-only">LinkedIn</span>
                         </Link>
                     </nav>
