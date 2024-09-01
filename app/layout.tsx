@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-        <body className={cn("min-h-screen container mx-auto max-w-screen-2xl", "p-4 pt-0 sm:p-6 md:p-8")}>
+        <body className={cn("min-h-screen container mx-auto max-w-screen-2xl", "p-4 pt-0")}>
         <Header />
         <Analytics />
         <SpeedInsights />

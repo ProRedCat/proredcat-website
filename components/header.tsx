@@ -6,7 +6,7 @@
     export function Header() {
         return (
             <>
-                <header className="z-10 sticky top-0 w-full">
+                <header className="z-10 sticky top-0 w-full bg-primary-cream">
                     <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between">
                         <div className="flex-1">
                             <PageNav/>
@@ -28,10 +28,10 @@
                             </Link>
                         </nav>
                     </div>
-                </header>
                 <div className="sticky top-14 w-full">
                     <div className="w-full h-1 bg-primary-navy-dark rounded-full"></div>
                 </div>
+                </header>
             </>
         );
     }
