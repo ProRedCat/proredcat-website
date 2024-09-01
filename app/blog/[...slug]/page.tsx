@@ -2,6 +2,8 @@ import {posts} from "#site/content";
 import {notFound} from "next/navigation";
 import {MDXContent} from "@/components/mdx-component";
 
+import "@/styles/mdx.css";
+
 interface PostPageProps {
     params: {
         slug: string[];
