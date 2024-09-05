@@ -58,6 +58,8 @@ Curious about which stop or station you've set as your default? Just say:
 
 There is a lot more that we could delve into here but for brevity we'll end this section here. If you have any issues feel free to reach out to me personally on [LinkedIn](https://www.linkedin.com/in/reilly-oldham/).
 
+
+#### Example visual responses
 <div className="flex flex-wrap justify-center">
     <Image src="/blog/alexa-skill-announcement-wellington-transport/bus_stop_saved.jpg" width={240} height={0} className="m-4" />
     <Image src="/blog/alexa-skill-announcement-wellington-transport/next_bus.jpg" width={240} height={0} className="m-4" />
@@ -124,7 +126,7 @@ However, we can still attempt to minimize the latency through caching, which is 
 
 During the development of the Wellington Public Transport Alexa Skill one of our main focuses was on ensuring a smooth experience both for the users interacting with the skill and for the us (the develoeprs) to maintain and enhance it. This is one of the reasons why we've iterated on the solution so much and refined it down to what we think is all you need feature wise. During this refinement process we also had a hard think about how failure states should be communicated to the user.
 
-Our final approach addressed both the developer maintainability and user experience by using the `Result<Ok<T>, Err>` pattern so we can fail up (combined with a really nice architecture, but that could be a whole other blog). We also made use of logging through [Cloudwatch](https://aws.amazon.com/cloudwatch/) and crash (error) reporting through [Raygun](https://raygun.com/) to provide post deployment monitoring.
+Our final approach addressed both the developer maintainability and user experience by using the `Result<T, E>` pattern so we can fail up (combined with a really nice architecture, but that could be a whole other blog). We also made use of logging through [Cloudwatch](https://aws.amazon.com/cloudwatch/) and crash (error) reporting through [Raygun](https://raygun.com/) to provide post deployment monitoring.
 
 ### Failing up: The Result Pattern and User-Friendly Error Messages
 
