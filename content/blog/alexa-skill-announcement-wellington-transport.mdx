@@ -5,7 +5,7 @@ description: "Discover how I built an Alexa Skill to track public transport, tac
 published: true
 ---
 
-### Introduction
+## Introduction
 
 Ever been in a rush in the morning without the time to navigate the Metlink app to find you just missed your bus or train? This exact scenario is why [Isaac Young](https://isaacy.dev/) and I created an Alexa Skill to provide real-time public transport information just with your voice.
 
@@ -13,13 +13,13 @@ Our motivation for this project stemmed from a shared desire to make our daily c
 
 In this post I'll dive into what we can do with our Alexa Skill followed by a technical deep dive on our journey to finally releasing this long-awaited project.
 
-### Getting Started with the Alexa Skill
+## Getting Started with the Alexa Skill
 
 You can install our Alexa Skill to your echo by finding us under [Wellington Public Transport](https://www.amazon.com.au/dp/B0D2DN6DX9/). Below is a quick starter guide on how to try out our skill.
 
 Start by opening the skill and saying **"Alexa, open Wellington Transport"**
 
-#### Personalised Stop Setting
+### Personalised Stop Setting
 Just set your stop and you're good to go:
 - **"Alexa, set my bus stop to [stop id]."**
 - **"Alexa, set my train station to [station id]."**
@@ -27,31 +27,31 @@ Just set your stop and you're good to go:
 Note: we only accept the stop/station id as an input, check either the [Metlink](https://www.metlink.org.nz/) website or [Catchy](https://catchy.nz/) to find your stop.
 
 
-#### Live Departures Display
+### Live Departures Display
 Want to know when the next bus or train is leaving? Just ask:
 - **"Alexa, when is the next bus from my stop?"**
 - **"Alexa, when is the next train from my station?"**
 
 Wellington Transport will provide you with real-time departure information for the next available service.
 
-#### Direction-specific Trains
+### Direction-specific Trains
 If you're a train commuter and need to know the departure time for a specific direction, try:
 - **"Alexa, when is the next inbound train from my station?"**
 - **"Alexa, when is the next outbound train from my station?"**
 
-#### Next Departure
+### Next Departure
 Planning ahead? Find out the departure time for the bus or train after the next one:
 - **"Alexa, when is the bus after that?"**
 - **"Alexa, when is the train after that?"**
 
 Wellington Transport will promptly provide the upcoming departure time.
 
-#### Recall Previous Inquiries
+### Recall Previous Inquiries
 Missed the information from a previous query? Retrieve it easily by asking:
 - **"Alexa, when is that bus I asked about earlier?"**
 - **"Alexa, when is that train I asked about earlier?"**
 
-#### What's My Stop
+### What's My Stop
 Curious about which stop or station you've set as your default? Just say:
 - **"Alexa, what's my bus stop?"**
 - **"Alexa, what's my train station?"**
@@ -67,7 +67,7 @@ There is a lot more that we could delve into here but for brevity we'll end this
 
 ---
 
-### Overcoming Technical Challenges
+## Overcoming Technical Challenges
 
 Building this Alexa Skill wasn't just about connecting APIs. A key challenge was optimizing performance, particularly because the skill is hosted on Alexa's free tier, located in `us-west-2`, while the Metlink API endpoints terminate in Auckland.
 
@@ -76,15 +76,15 @@ The most important constraint, however, is the execution time limit for an Alexa
 Alongside these latency concerns, there was also a limit on the number of files and the total size of the artefact uploaded. This limit was 100 files and 6MB of data. This means we're going to have to do something smart if our architecture gets too big. Spoilers: We did.
 
 
-### Building Within Constraints: Technology Stack and Free Tier Limitations
+## Building Within Constraints: Technology Stack and Free Tier Limitations
 
-#### Optimizing Language and Build Pipeline
+### Optimizing Language and Build Pipeline
 
 We chose to create this in `TypeScript` due to its stricter type safety and familiarity. As this is not a compiled language, the number of files when we transpile to `JavaScript` remains the same as before. This became an issue for us, because as of this blog, we have `107` files in describing the whole architecture crossing that `100` file limit. The solution of this is relatively simple though and lends a hand from optimizing websites - minification.
 
 During our build process we minify our transpiled `JavaScript` into a singular `index.js` file. However, if we encounter an error, similar to websites, we get a stack trace that corresponds to the minified `JavaScript` code, not our original `TypeScript` code. This, unsurprisingly, is very unhelpful for debugging. What can help us here though is ✨ sourcemaps ✨, which I don't think get enough attention, so I'm going to touch on them again later.
 
-#### Reducing Latency through Network Call Optimization
+### Reducing Latency through Network Call Optimization
 
 As I alluded to earlier, having a hard stop at `8s` on the response time of our skill's lambda made things difficult, especially given that the free tier is provisioned in `us-west-2`. To minimize latency, we focused on reducing the number of network calls, parallelizing tasks wherever possible, and starting creating promises as early as possible. By batching requests and caching results, we were able to deliver fast responses even under these constraints.
 
@@ -120,13 +120,13 @@ async getStopsOfServiceId(serviceId: string): Promise<Result<Stop[], Error>> {
 However, we can still attempt to minimize the latency through caching, which is what we have done on subsequent conversation requests where we cache the API result in the session state. We could go a step further and also store our own cache of the Metlink API's Stop endpoint but our response times are good enough for now.
 
 
-### Enhancing Developer and User Experience
+## Enhancing Developer and User Experience
 
 During the development of the Wellington Public Transport Alexa Skill one of our main focuses was on ensuring a smooth experience both for the users interacting with the skill and for the us (the develoeprs) to maintain and enhance it. This is one of the reasons why we've iterated on the solution so much and refined it down to what we think is all you need feature wise. During this refinement process we also had a hard think about how failure states should be communicated to the user.
 
 Our final approach addressed both the developer maintainability and user experience by using the `Result<Ok<T>, Err>` pattern so we can fail up (combined with a really nice architecture, but that could be a whole other blog). We also made use of logging through [Cloudwatch](https://aws.amazon.com/cloudwatch/) and crash (error) reporting through [Raygun](https://raygun.com/) to provide post deployment monitoring.
 
-#### Failing up: The Result Pattern and User-Friendly Error Messages
+### Failing up: The Result Pattern and User-Friendly Error Messages
 
 By adopting the `Result` pattern we knew at each method call what we can expect from this, e.g. a `Ok<T>` or an `Err`. While you could argue that this is just `try` `catch` `throw` with different syntax, it's not. The main difference here is that the `Result` pattern requires explicit error handling for both cases at every method call, making error propagation clear and thus preventing unexpected exceptions from bubbling up silently. This leads to more predictable control flow and easier debugging, as all outcomes must be addressed rather than potentially ignored.
 
@@ -155,7 +155,7 @@ private async handleSaveMyBusStopQuestion(
 
 Re-prompting is one of the most important usability features we explored and implemented. We could have sent a reply saying "this is not valid", but to enhance user experience it's nicer to be asked again so they do not have to repeat the whole invocation phrase.
 
-#### Observation and Logging: Sourcemaps, Raygun, and CloudWatch Logs
+### Observation and Logging: Sourcemaps, Raygun, and CloudWatch Logs
 
 The other key part to making maintainable software is observability. This includes bugs, performance bottlenecks, and other useful analytics. Through `Cloudwatch Logs` we measure load times of the network calls including start time and end time which can allow us to diagnose what calls overlapping/what can be overlapped. Additionally, we control flow that is of interest so we can trace back if we have an error.
 
@@ -199,7 +199,7 @@ gulp.task("bundle", function () {
 
 Again there's a lot more to sourcemaps as they're a fascinating topic, but that could be for another blog - maybe on how we could version build to sourcemap pairs. Though for now I'll leave it there.
 
-### Conclusion
+## Conclusion
 We've finally reached the end of my first blog on my new site. I really hope you enjoyed it as much as I enjoyed writing this piece and working on the project. There's been a ton of learnings over the course of this project, and likely more to come as I keep maintaining this. If there are any suggestions, be it changes to the blog, feature requests, or whatever, feel free to reach out to me on [LinkedIn](https://www.linkedin.com/in/reilly-oldham/).
 
 If you enjoyed this blog I do have a bunch more planned so stay tuned. They'll likely be technical deepdives on topics I've found interesting as of late, such as using [ASP.NET MVC](https://dotnet.microsoft.com/en-us/apps/aspnet/mvc) with [HTMX](https://htmx.org/), or some upcoming projects for WearOS apps that I'm working on.
