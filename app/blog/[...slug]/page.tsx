@@ -31,8 +31,10 @@ export default async function PostPage({params}: PostPageProps) {
 
     return (
         <>
-            <article className="container pt-8 prose w-full">
+            <article className="container pt-[15vh] prose w-full">
                 <h1 className="mb-2">{post.title}</h1>
+                <p>{post.description}</p>
+                <hr/>
                 <MDXContent code={post.body} />
             </article>
         </>);
