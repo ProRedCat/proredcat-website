@@ -83,7 +83,7 @@ Alongside these latency concerns, there was also a limit on the number of files 
 
 #### Optimizing Language and Build Pipeline
 
-We chose to create this in `TypeScript` due to its stricter type safety and familiarity. As this is not a compiled language, the number of files when we transpile to `JavaScript` remains the same as before. This became an issue for us as of this blog we have `107` files in describing the whole architecture crossing that `100` file limit. The solution of this is relatively simple though and lends a hand from optimizing websites - minification.
+We chose to create this in `TypeScript` due to its stricter type safety and familiarity. As this is not a compiled language, the number of files when we transpile to `JavaScript` remains the same as before. This became an issue for us, because as of this blog, we have `107` files in describing the whole architecture crossing that `100` file limit. The solution of this is relatively simple though and lends a hand from optimizing websites - minification.
 
 During our build process we minify our transpiled `JavaScript` into a singular `index.js` file. However, if we encounter an error, similar to websites, we get a stack trace that corresponds to the minified `JavaScript` code, not our original `TypeScript` code. This, unsurprisingly, is very unhelpful for debugging. What can help us here though is ✨ sourcemaps ✨, which I don't think get enough attention, so I'm going to touch on them again later.
 
@@ -156,7 +156,7 @@ private async handleSaveMyBusStopQuestion(
 }
 ```
 
-Re-prompting is one of the most important usability features we explored and implemented. We could have sent a reply saying "this is not valid", but to enhance user experience it's nicer to be asked again so they do not have to repeat the whole phrase.
+Re-prompting is one of the most important usability features we explored and implemented. We could have sent a reply saying "this is not valid", but to enhance user experience it's nicer to be asked again so they do not have to repeat the whole invocation phrase.
 
 #### Observation and Logging: Sourcemaps, Raygun, and CloudWatch Logs
 
@@ -174,11 +174,11 @@ export function makeErr<T extends Error>(err: T): Err<T> {
 
 Included in the error reports we have the `unmappedColumnNumber` and `unmappedLineNumber`, these allow us to symbolicate to a useful stack trace despite our code being minified. We've finally circled back to sourcemaps, so I can finally go a bit more in a little bit more detail.
 
-Circling back to when I mentioned sourcemaps earlier, we can finally go a little bit deeper. When we build our project we get our `index.js` file and a `index.js.map` file. This `.map` file is the [secret ingredient](https://youtu.be/b2F-DItXtZs?t=141) in the sourcemap sauce. It stores the mappings from line/column numbers to their original source, the source code can also be embedded in the sourcemap. This means that when you symbolicate the sourcemap you can also get snippets of code from where that line is mapped to.
+When we build our project we get our `index.js` file and a `index.js.map` file. This `.map` file is the [secret ingredient](https://youtu.be/b2F-DItXtZs?t=141) in the sourcemap sauce. It stores the mappings from line/column numbers to their original source, the source code can also be embedded in the sourcemap. This means that when you symbolicate the sourcemap you can also get snippets of code from where that line is mapped to rather than something like `error at line 1 column 23984`.
 
 `Raygun` does this for us automatically, which is such a great feature as instead of cross-referencing the files we can already see stack trace with the surrounding context already.
 
-We used `gulp.js` for our build pipeline (don't ask me why), but there are other alternatives we could try out such as `WebPack`, or better yet, `Vite` with useful features such as tree shaking and much faster build times. This builds both our minified file and produces the `.map` file required for source mapping which we then upload to `Raygun` using the new [sourcemap upload endpoints](https://raygun.com/documentation/language-guides/javascript/crash-reporting/source-maps/#uploading-using-the-api).
+We used `gulp.js` for our build pipeline (don't ask me why), there are other alternatives we could try out such as `WebPack`, or better yet, `Vite` with useful features such as tree shaking and much faster build times. `Gulp` builds both our minified file and produces the `.map` file required for source mapping which we then upload to `Raygun` using the new [sourcemap upload endpoints](https://raygun.com/documentation/language-guides/javascript/crash-reporting/source-maps/#uploading-using-the-api) automatically.
 ```typescript showLineNumbers
 gulp.task("bundle", function () {
     return browserify({
@@ -205,4 +205,4 @@ Again there's a lot more to sourcemaps as they're a fascinating topic, but that 
 ### Conclusion
 We've finally reached the end of my first blog on my new site. I really hope you enjoyed it as much as I enjoyed writing this piece and working on the project. There's been a ton of learnings over the course of this project, and likely more to come as I keep maintaining this. If there are any suggestions, be it changes to the blog, feature requests, or whatever, feel free to reach out to me on [LinkedIn](https://www.linkedin.com/in/reilly-oldham/).
 
-If you enjoyed this blog I do have a bunch more planned so stay tuned. They'll likely be technical deepdives on topics I've found interesting as of late, such as using [ASP.NET MVC](https://dotnet.microsoft.com/en-us/apps/aspnet/mvc) with [HTMX](https://htmx.org/), or some upcoming projects for WearOS apps.
+If you enjoyed this blog I do have a bunch more planned so stay tuned. They'll likely be technical deepdives on topics I've found interesting as of late, such as using [ASP.NET MVC](https://dotnet.microsoft.com/en-us/apps/aspnet/mvc) with [HTMX](https://htmx.org/), or some upcoming projects for WearOS apps that I'm working on.
