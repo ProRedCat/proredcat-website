@@ -1,21 +1,11 @@
-import { posts } from "#site/content";
+import Image from 'next/image';
+import BlogPreview from "@/components/blog-preview";
+import {posts} from "@/.velite";
 
 export default function BlogPage() {
-    const displayPosts = posts;
-
     return (
-        <div>
-            {displayPosts?.length > 0 ? (
-                displayPosts.map((post) => (
-                    <div key={post.slug}>
-                        <h2>{post.title}</h2>
-                        <p>{post.description}</p>
-                        <p>{post.slugAsParams}</p>
-                    </div>
-                ))
-            ) : (
-                <p>I do not have posts</p>
-            )}
+        <div className="flex justify-center items-center w-full">
+            <BlogPreview posts={posts} />
         </div>
     );
 }
