@@ -20,6 +20,7 @@ const posts = defineCollection({
             description: s.string().max(999),
             short_description: s.string().max(999),
             date: s.isodate(),
+            hero: s.string().max(999).optional(),
             published: s.boolean().default(true),
             tags: s.array(s.string()).optional(),
             body: s.mdx()
