@@ -15,7 +15,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                     {posts.map((post) => (
                         <Link key={post.slug} href={`/${post.slug}`} className="block group h-full">
                             <div className="flex flex-col w-full h-[480px] transition-transform duration-300 group-hover:shadow-2xl shadow-lg rounded-b-3xl">
-                                <div className="relative w-full h-64">
+                                <div className="relative w-full h-52">
                                     <Image
                                         src={post.hero || DEFAULT_HERO_IMAGE}
                                         alt={post.title}
