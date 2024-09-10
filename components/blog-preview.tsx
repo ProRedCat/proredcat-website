@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Post } from "@/.velite";
+import {readingTime, wordCount} from "@/lib/utils";
+
+const DEFAULT_HERO_IMAGE = "/blog/default-hero-image.JPG";
 
 export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts: Post[], onTagClick: (tag: string) => void, selectedTags: string[] }) {
     return (
@@ -11,19 +14,21 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {posts.map((post) => (
                         <Link key={post.slug} href={`/${post.slug}`} className="block group h-full">
-                            <div className="flex flex-col h-full transition-transform duration-300 group-hover:shadow-2xl shadow-lg rounded-b-3xl">
-                                <Image
-                                    src={"/blog/alexa-skill-announcement-wellington-transport/hero-2.png"}
-                                    alt={post.title}
-                                    width={512}
-                                    height={512}
-                                    className="w-full h-64 object-cover rounded-t-lg"
-                                />
+                            <div className="flex flex-col h-full w-full transition-transform duration-300 group-hover:shadow-2xl shadow-lg rounded-b-3xl">
+                                <div className="relative w-full h-64">
+                                    <Image
+                                        src={post.hero || DEFAULT_HERO_IMAGE}
+                                        alt={post.title}
+                                        fill
+                                        className="object-cover rounded-t-lg"
+                                    />
+                                </div>
                                 <div className="p-5 pt-4 flex flex-col flex-grow">
                                     <div className="mb-4">
                                         <h2 className="text-xl font-semibold mb-2 group-hover:underline transition-all line-clamp-2">{post.title}</h2>
+                                        <div></div>
                                         <p className="text-sm opacity-70">
-                                            {format(new Date(post.date), 'MMMM d, yyyy')}
+                                            {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words | {readingTime(post.body)} min
                                         </p>
                                     </div>
                                     <p className="mb-4 flex-grow line-clamp-3">{post.short_description}</p>

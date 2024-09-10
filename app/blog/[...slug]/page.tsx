@@ -3,6 +3,8 @@ import {notFound} from "next/navigation";
 import {MDXContent} from "@/components/mdx-component";
 
 import "@/styles/mdx.css";
+import {format} from "date-fns";
+import {readingTime, wordCount} from "@/lib/utils";
 
 interface PostPageProps {
     params: {
@@ -33,9 +35,15 @@ export default async function PostPage({params}: PostPageProps) {
         <>
             <article className="container pt-[15vh] prose w-full">
                 <h1 className="mb-2">{post.title}</h1>
+                <div className="mb-4">
+                    <p className="text-sm opacity-70">
+                        {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words
+                        | {readingTime(post.body)} min
+                    </p>
+                </div>
                 <p>{post.description}</p>
                 <hr/>
-                <MDXContent code={post.body} />
+                <MDXContent code={post.body}/>
             </article>
         </>);
 }
