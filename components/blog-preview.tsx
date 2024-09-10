@@ -10,9 +10,8 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
             {posts?.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {posts.map((post) => (
-                        <Link key={post.slug} href={`/${post.slug}`} className="block group">
-                            <div
-                                className="flex flex-col transition-transform duration-300 group-hover:shadow-2xl shadow-lg rounded-b-3xl">
+                        <Link key={post.slug} href={`/${post.slug}`} className="block group h-full">
+                            <div className="flex flex-col h-full transition-transform duration-300 group-hover:shadow-2xl shadow-lg rounded-b-3xl">
                                 <Image
                                     src={"/blog/alexa-skill-announcement-wellington-transport/hero-2.png"}
                                     alt={post.title}
@@ -20,15 +19,15 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                     height={512}
                                     className="w-full h-64 object-cover rounded-t-lg"
                                 />
-                                <div className="p-5 pt-4">
+                                <div className="p-5 pt-4 flex flex-col flex-grow">
                                     <div className="mb-4">
-                                        <h2 className="text-xl font-semibold mb-2 group-hover:underline transition-all">{post.title}</h2>
+                                        <h2 className="text-xl font-semibold mb-2 group-hover:underline transition-all line-clamp-2">{post.title}</h2>
                                         <p className="text-sm opacity-70">
                                             {format(new Date(post.date), 'MMMM d, yyyy')}
                                         </p>
                                     </div>
-                                    <p className="mb-4 flex-grow">{post.short_description}</p>
-                                    <div>
+                                    <p className="mb-4 flex-grow line-clamp-3">{post.short_description}</p>
+                                    <div className="mt-auto">
                                         {post.tags?.map((tag) => (
                                             <button
                                                 key={tag}
@@ -38,7 +37,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                                 }}
                                                 className={`inline-flex px-2 py-1 ${
                                                     selectedTags.includes(tag) ? 'bg-red-500 text-white' : 'bg-red-secondary text-primary-cream'
-                                                } text-sm hover:bg-opacity-90 transition-colors items-center space-x-2 rounded-[10px] mr-2`}
+                                                } text-sm hover:bg-opacity-90 transition-colors items-center space-x-2 rounded-[10px] mr-2 mb-2`}
                                             >
                                                 {tag}
                                             </button>
