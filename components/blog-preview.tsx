@@ -20,6 +20,8 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                         src={post.hero || DEFAULT_HERO_IMAGE}
                                         alt={post.title}
                                         fill
+                                        placeholder={post?.blurHash ? "blur" : "empty"}
+                                        blurDataURL={post?.blurHash}
                                         className="object-cover rounded-t-lg"
                                     />
                                 </div>
@@ -31,7 +33,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                             {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words | {readingTime(post.body)} min
                                         </p>
                                     </div>
-                                    <p className="mb-4 flex-grow line-clamp-3">{post.short_description}</p>
+                                    <p className="mb-4 flex-grow line-clamp-3">{post.shortDescription}</p>
                                     <div className="mt-auto">
                                         {post.tags?.map((tag) => (
                                             <button
