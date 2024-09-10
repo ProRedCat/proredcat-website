@@ -18,7 +18,7 @@ export default function BlogPage() {
         : posts;
 
     return (
-        <div>
+        <div className="w-full h-full">
             <BlogPreview posts={filteredPosts} onTagClick={toggleTag} selectedTags={selectedTags}/>
         </div>
     );
