@@ -37,7 +37,7 @@ export default function HumanMotionDiffusion() {
                 <div className="mt-4">
                     <div>
                         <p>
-                            This project developed an autoregressive conditional diffusion model to efficiently generate realistic human
+                            This was my honours research paper where I developed a novel autoregressive conditional diffusion model to efficiently generate realistic human
                             motion sequences, offering a faster and more scalable alternative to traditional animation and motion capture
                             methods. By integrating an LSTM-based autoregressive component, the model predicts future motion based on past
                             actions, and was optimized for faster training with advanced solvers, achieving strong performance in

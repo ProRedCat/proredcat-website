@@ -41,11 +41,11 @@ export default function AlexaTransportProject() {
                 <div className="mt-4">
                     <div>
                         <p className="">
-                            An Alexa Skill for Wellington's Metlink transport, offering real-time bus and train schedules.
-                            Designed with hands-free convenience in mind, it's perfect for busy mornings when checking your
-                            phone isn't ideal. The skill supports essential queries like "when is the next bus/train,"
-                            "when is the last bus/train," and more. With accessibility in focus, it provides a great experience
-                            for low-vision users. The project involved performance optimization due to hosting constraints in Alexa's
+                            An Alexa Skill for Wellington&apos;s Metlink transport, offering real-time bus and train schedules.
+                            Designed with hands-free convenience in mind, it&apos;s perfect for busy mornings when checking your
+                            phone isn&apos;t ideal. The skill supports essential queries like &quot;when is the next bus/train,&quot;
+                            &quot;when is the last bus/train,&quot; and more. With accessibility in focus, it provides a great experience
+                            for low-vision users. The project involved performance optimization due to hosting constraints in Alexa&apos;s
                             free tier, ensuring quick responses.
                         </p>
                     </div>
