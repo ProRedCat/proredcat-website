@@ -35,7 +35,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                     </div>
 
                                     <hr/>
-                                    
+
                                     <p className="mb-4 flex-grow line-clamp-3 pt-2">{post.shortDescription}</p>
                                     <div className="mt-auto">
                                         {post.tags?.map((tag) => (
