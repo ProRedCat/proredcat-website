@@ -26,14 +26,17 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                     />
                                 </div>
                                 <div className="p-5 pt-4 flex flex-col flex-grow">
-                                    <div className="mb-4">
+                                    <div className="mb-2">
                                         <h2 className="text-xl font-semibold mb-2 group-hover:underline transition-all line-clamp-2">{post.title}</h2>
                                         <div></div>
                                         <p className="text-sm opacity-70">
                                             {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words | {readingTime(post.body)} min
                                         </p>
                                     </div>
-                                    <p className="mb-4 flex-grow line-clamp-3">{post.shortDescription}</p>
+
+                                    <hr/>
+                                    
+                                    <p className="mb-4 flex-grow line-clamp-3 pt-2">{post.shortDescription}</p>
                                     <div className="mt-auto">
                                         {post.tags?.map((tag) => (
                                             <button
