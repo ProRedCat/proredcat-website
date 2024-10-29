@@ -1,5 +1,6 @@
 import Image from "next/image";
 import * as runtime from "react/jsx-runtime";
+import YouTube from "@/components/youtube";
 
 const useMDXComponent = (code: string) => {
     const fn = new Function(code);
@@ -7,7 +8,8 @@ const useMDXComponent = (code: string) => {
 }
 
 const components = {
-    Image
+    Image,
+    YouTube
 }
 
 interface MdxProps {
