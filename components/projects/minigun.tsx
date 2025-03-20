@@ -2,38 +2,38 @@ import Link from "next/link";
 import {format} from "date-fns";
 import Image from "next/image";
 
-export default function HumanMotionDiffusion() {
-    const tags = ["Python", "GluonTS", "Diffusion", "LSTM", "LaTeX"];
-    const releaseDate = new Date(2023, 10, 10);
+export default function MinigunProject() {
+    const tags = ["ASP.NET Core", "HTMX", "C#", ".NET 9", "TailwindCSS"];
+    const releaseDate = new Date(2024, 2, 15);
 
     return (
         <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
-            <div className="relative w-full h-52">
+            <div className="relative w-full h-52 bg-[#001B2E]">
                 <Image
-                    src="/projects/human-motion/man-running.gif"
-                    alt="Stick figure running"
+                    src="/projects/minigun/minigun-dashboard.png"
+                    alt="Minigun dashboard showing error statistics and monitoring"
                     fill
-                    className="object-cover rounded-t-lg"
+                    className="object-contain rounded-t-lg p-2"
                     priority={true}
                 />
             </div>
             
             <div className="p-5 pt-4 flex flex-col flex-grow">
                 <div className="mb-2">
-                    <Link href="https://ojs.victoria.ac.nz/wfes/article/view/8416/7515"
+                    <Link href="https://github.com/ProRedCat/minigun"
                           className="text-xl font-semibold line-clamp-2 block">
-                        Diffusion Based Human Motion Generation
+                        Minigun
                     </Link>
                     <p className="text-sm opacity-70">
-                        Completed: {format(releaseDate, 'MMMM d, yyyy')}
+                        Launched: {format(releaseDate, 'MMMM d, yyyy')}
                     </p>
                 </div>
 
                 <hr/>
 
                 <p className="mb-4 flex-grow line-clamp-3 pt-2">
-                    This was my honours research paper where I developed a novel autoregressive conditional diffusion model to efficiently generate realistic human
-                    motion sequences, offering a faster and more scalable alternative to traditional animation and motion capture methods.
+                    A blazingly fast Webapp built on Raygun&apos;s API V3 endpoints to show your crash reporting data in a new modern UI. 
+                    Built with ASP.NET Core and HTMX, it leverages the latest .NET 9 features for optimal performance and developer experience.
                 </p>
 
                 <div className="mt-auto">
@@ -48,12 +48,16 @@ export default function HumanMotionDiffusion() {
                 </div>
 
                 <div className="flex gap-4 mt-2">
-                    <Link href="https://ojs.victoria.ac.nz/wfes/article/view/8416/7515" 
+                    <Link href="https://github.com/ProRedCat/minigun" 
                           className="text-sm underline">
-                        Research Paper
+                        GitHub
+                    </Link>
+                    <Link href="https://minigun.proredcat.xyz" 
+                          className="text-sm underline">
+                        Live Site
                     </Link>
                 </div>
             </div>
         </div>
     );
-}
+} 

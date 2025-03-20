@@ -7,71 +7,56 @@ export default function AlexaTransportProject() {
     const releaseDate = new Date(2024, 9, 10);
 
     return (
-        <div className="flex justify-center mt-4 w-full">
-            <div className="sm:w-4/5 md:4/5 lg:w-2/5 shadow-2xl p-6 pb-2 rounded-xl h-fit">
-                <div className="flex items-center justify-center">
+        <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
+            <div className="relative w-full h-52">
+                <Image
+                    src="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
+                    alt="Alexa Skill hero image"
+                    fill
+                    className="object-cover rounded-t-lg"
+                    priority={true}
+                />
+            </div>
+            
+            <div className="p-5 pt-4 flex flex-col flex-grow">
+                <div className="mb-2">
                     <Link href="/blog/alexa-skill-announcement-wellington-transport"
-                          className="text-2xl font-bold text-primary-navy-dark text-center underline">Wellington Public
-                        Transport: Alexa Skill</Link>
+                          className="text-xl font-semibold line-clamp-2 block">
+                        Wellington Public Transport: Alexa Skill
+                    </Link>
+                    <p className="text-sm opacity-70">
+                        Launched: {format(releaseDate, 'MMMM d, yyyy')}
+                    </p>
                 </div>
 
-                <div className="flex flex-col items-center">
+                <hr/>
 
-                    <div className="flex pt-2">
-                        <p className="pr-2">Status:</p>
-                        <div className="px-3 py-1 bg-primary-green-dark text-primary-cream text-sm rounded-lg">
-                            Completed
-                        </div>
-                    </div>
-                    <p className="text-sm text-gray-500">Launched: {format(releaseDate, 'MMMM d, yyyy')}</p>
+                <p className="mb-4 flex-grow line-clamp-3 pt-2">
+                    An Alexa Skill for Wellington&apos;s Metlink transport, offering real-time bus and train schedules.
+                    Designed with hands-free convenience in mind, it&apos;s perfect for busy mornings when checking your
+                    phone isn&apos;t ideal.
+                </p>
 
-                    <div className="flex gap-2">
-                        <p>Links:</p>
-                        <Link href="https://www.amazon.com.au/dp/B0D2DN6DX9/" className="underline">Alexa Skill
-                            Store</Link>
-                        <Link href="/blog/alexa-skill-announcement-wellington-transport"
-                              className="underline">Blogpost</Link>
-                    </div>
-
-                </div>
-
-
-                <hr className="mt-2"/>
-
-                <div className="mt-4">
-                    <div>
-                        <p className="">
-                            An Alexa Skill for Wellington&apos;s Metlink transport, offering real-time bus and train schedules.
-                            Designed with hands-free convenience in mind, it&apos;s perfect for busy mornings when checking your
-                            phone isn&apos;t ideal. The skill supports essential queries like &quot;when is the next bus/train,&quot;
-                            &quot;when is the last bus/train,&quot; and more. With accessibility in focus, it provides a great experience
-                            for low-vision users. The project involved performance optimization due to hosting constraints in Alexa&apos;s
-                            free tier, ensuring quick responses.
-                        </p>
-                    </div>
-                    <Image
-                        src="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
-                        alt="Alexa Skill hero image"
-                        width={240}
-                        height={240}
-                        className="rounded-3xl pt-2 mx-auto w-80%"
-                        priority={true}
-                    />
-                </div>
-
-
-                <hr className="mt-2"/>
-
-                <p className="text-center text-lg pt-2">Technologies</p>
-                <div className="flex flex-wrap items-center justify-center pt-2">
+                <div className="mt-auto">
                     {tags?.map((tag) => (
                         <span
                             key={tag}
-                            className="inline-block px-3 py-1 bg-red-secondary text-primary-cream text-sm rounded-lg mr-2 mb-2 pt-1"
+                            className="inline-flex px-2 py-1 bg-red-secondary text-primary-cream text-sm rounded-[10px] mr-2 mb-2"
                         >
                             {tag}
                         </span>
                     ))}
+                </div>
+
+                <div className="flex gap-4 mt-2">
+                    <Link href="https://www.amazon.com.au/dp/B0D2DN6DX9/" 
+                          className="text-sm underline">
+                        Alexa Skill Store
+                    </Link>
+                    <Link href="/blog/alexa-skill-announcement-wellington-transport"
+                          className="text-sm underline">
+                        Read More
+                    </Link>
                 </div>
             </div>
         </div>

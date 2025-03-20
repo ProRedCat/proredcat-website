@@ -1,25 +1,20 @@
 import AlexaTransportProject from "@/components/projects/alexa-transport";
 import HumanMotionDiffusion from "@/components/projects/human-motion";
+import MinigunProject from "@/components/projects/minigun";
 
 export default function ProjectsPage() {
     return (
-        <div className="mx-auto pt-16">
-            <h1 className="text-2xl text-center">Main Projects</h1>
-
-            <div className="flex pt-4 justify-center items-center bg-primary-cream">
-                <div className="w-full max-w-md p-6 border-4 border-primary-navy-dark rounded-lg">
-                    <p className="italic text-primary-navy-dark text-lg">
-                        This page is under partial construction
-                    </p>
+        <div className="min-h-screen bg-primary-cream">
+            <div className="container mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold mb-8">Projects</h1>
+                
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <MinigunProject />
+                    <AlexaTransportProject />
+                    <HumanMotionDiffusion />
+                    {/* Add more projects here */}
                 </div>
             </div>
-
-            <AlexaTransportProject/>
-
-            {/*<hr className="mt-4 w-2/3 mx-auto"/>*/}
-
-            <HumanMotionDiffusion/>
         </div>
     );
-
 }
