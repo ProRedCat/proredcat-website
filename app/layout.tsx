@@ -52,9 +52,6 @@ export const metadata: Metadata = {
             'max-snippet': -1,
         },
     },
-    verification: {
-        google: "your-google-site-verification",
-    },
     alternates: {
         canonical: "https://www.proredcat.xyz",
     },
