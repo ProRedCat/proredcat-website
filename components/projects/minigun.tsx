@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function MinigunProject() {
     const tags = ["ASP.NET Core", "HTMX", "C#", ".NET 9", "TailwindCSS"];
-    const releaseDate = new Date(2024, 2, 15);
+    const releaseDate = new Date(2024, 9, 28);
 
     return (
         <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">

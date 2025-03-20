@@ -4,7 +4,7 @@ import MinigunProject from "@/components/projects/minigun";
 
 export default function ProjectsPage() {
     return (
-        <div className="min-h-screen bg-primary-cream">
+        <div className="min-h-[calc(100vh-65px-2rem)] bg-primary-cream">
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold mb-8">Projects</h1>
                 
