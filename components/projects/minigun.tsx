@@ -3,7 +3,7 @@ import {format} from "date-fns";
 import Image from "next/image";
 
 export default function MinigunProject() {
-    const tags = ["ASP.NET Core", "HTMX", "C#", ".NET 9", "TailwindCSS"];
+    const tags = ["ASP.NET Core", "HTMX", "C#", ".NET 9", "TailwindCSS", "Bun"];
     const releaseDate = new Date(2024, 9, 28);
 
     return (
