@@ -7,10 +7,10 @@ export default function Home() {
             <div className="flex flex-col items-start justify-between w-full md:w-96 gap-8">
                 <div className="flex flex-col items-start justify-between w-full gap-4">
                     <p className="text-2xl md:text-3xl font-bold text-primary-navy-dark break-words underline">
-                        Hi, I'm Reilly Oldham.
+                        Hi, I&apos;m Reilly Oldham.
                     </p>
                     <p className="text-justify text-sm md:text-base">
-                        I'm a software engineer with a focus on backend and full-stack development. I enjoy building scalable systems, optimizing performance, and crafting tools that help other developers.
+                        I&apos;m a software engineer with a focus on backend and full-stack development. I enjoy building scalable systems, optimizing performance, and crafting tools that help other developers.
                     </p>
                 </div>
                 <div className="text-lg flex flex-col w-full gap-2">
