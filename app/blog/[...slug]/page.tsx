@@ -33,7 +33,7 @@ export default async function PostPage({params}: PostPageProps) {
 
     return (
         <>
-            <article className="container pt-[15vh] prose w-full">
+            <article className="container pt-[15vh] prose w-full mx-auto">
                 <h1 className="mb-2">{post.title}</h1>
                 <div className="mb-4">
                     <p className="text-sm opacity-70">
