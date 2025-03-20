@@ -24,7 +24,7 @@ export default function Home() {
             </div>
             <div className="flex justify-center items-center w-48 md:w-auto">
                 <Image
-                    src="/public/static/Reilly-Blue-BackG Cropped.png"
+                    src="/public/Reilly-Blue-BackG Cropped.png"
                     alt="Reilly with blue background"
                     width={400}
                     height={400}
