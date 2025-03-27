@@ -17,9 +17,13 @@ export default function BlogPage() {
         ? posts.filter(post => post.tags?.some(tag => selectedTags.includes(tag)))
         : posts;
 
+    const sortedPosts = [...filteredPosts].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
     return (
         <div className="w-full h-full">
-            <BlogPreview posts={filteredPosts} onTagClick={toggleTag} selectedTags={selectedTags}/>
+            <BlogPreview posts={sortedPosts} onTagClick={toggleTag} selectedTags={selectedTags}/>
         </div>
     );
 }

@@ -1,0 +1,45 @@
+---
+title: "Rediscovering Hypermedia in a Component-Obsessed World"
+date: 2025-03-30
+description: This blog explores how HTMX and ASP.NET Core enable a hypermedia-driven approach to building modern web apps—without the complexity of client-side frameworks. It compares HTMX with React and Blazor, outlines tradeoffs, and draws from real-world projects like Minigun and a startup AI platform.
+shortDescription: A deep dive into building hypermedia-first UIs with HTMX and ASP.NET Core, and how it compares to React and Blazor.
+hero: /blog/htmx-hypermedia-dotnet/htmx-logo-512.png
+published: true
+tags: ["HTMX", "ASP.NET Core", "Hypermedia", "Web Architecture", "Technical"]
+---
+
+One of my formative experiences building for the web was using PHP. Back then, templating with `<?php include 'header.php'; ?>` and `<?php include 'footer.php'; ?>` felt like magic. You’d write some logic, mix it with HTML, and send it straight to the browser. No build tools, no virtual DOM — just a server generating HTML and the browser rendering it.
+
+Fast-forward to now, and the landscape looks very different. If you’re starting a new web project today, the default stack is likely React or Next.js, TypeScript, and an ever-growing list of client-side tooling. Funnily enough, even this blog is built with that setup (and I love it).
+
+But somewhere between PHP and the present, we seem to have traded simplicity for flexibility. The act of rendering a list or submitting a form now involves client-side state, hooks, serializers, and hydration strategies. The client is often treated as the source of truth — and the server, increasingly, is just a JSON API.
+
+This increased complexity for the sake of flexibility becomes a huge pain point when developing frontend applications - especially large ones. I've seen it happen and I'm sure some of the readers of this will have some stories of their own.
+
+So why should it be so complex? What was wrong with the old way of writing web applications?
+
+## The old way wasn't broken
+
+Server-rendered HTML worked. You'd request a page, and the server would send back exactly what you needed — fully formed, ready to render. No hydration, no mismatched state, no waiting for JavaScript bundles to load before anything meaningful showed up. It was simple, reliable, and surprisingly fast.
+
+When React and other frameworks took over, the goal was to improve interactivity. And to be fair, they did. Component-based design, fine-grained state management, and client-side routing made rich interfaces easier to build — but at a cost.
+
+We didn’t eliminate round trips — we just changed who made them. Instead of the browser asking the server for a page, the client asked the server for data, then reassembled the UI locally. We gained flexibility, but now had to deal with spinners, loading states, optimistic updates, and layout shifts. We wrote more code, not less. And somehow, rendering a list became an exercise in managing three layers of abstraction.
+
+Even now, with frameworks like React Server Components and Next.js 13+ moving rendering back to the server, it feels like we’re slowly circling back to where we started — just with more tooling and complexity layered on top.
+
+HTMX takes a different approach. It doesn’t try to reinvent the web. It leans into it — using hypermedia and server-rendered fragments to bring interactivity without surrendering simplicity. It reminds us that maybe the old way wasn’t broken — just forgotten.
+
+## What HTMX brings to the table
+
+HTMX allows you to build interactive web pages just by serving HTML. It extends HTML with attributes like `hx-get`, `hx-post`, and `hx-swap`, which let you request and update parts of the page without writing any JavaScript.
+
+Want to submit a form and update part of the page with the result? Just add `hx-post="/profile"` to your form and `hx-target="#profile-summary"` to specify where the response should go. HTMX will send the form data via POST, receive an HTML fragment from the server, and update the `#profile-summary` div. You can even update a completely different part of the page than the form itself, making it easy to reflect changes elsewhere in the UI.
+
+The philosophy is simple: HTML is the state. The server knows what the user should see — whether that’s a specific profile, a dashboard panel, or an error message — and it renders the correct HTML in response. There’s no need for a client-side store or hydration logic. If a user’s ID is 2, that state is embedded directly into the markup or link, for example as `hx-get="/users/2/details"`, and the server responds accordingly.
+
+This approach brings back a level of clarity we’ve lost. You no longer need to think in terms of client and server as separate worlds. Your UI can simply be HTML fragments and conventional HTTP routes, with HTMX acting as the bridge that adds interactivity exactly where it’s needed.
+
+## Digging deeper - ASP.NET and HTMX
+
+HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, Go with Templ, Ruby on Rails, Laravel, and many others. Since I primarily work with .NET, I decided to explore HTMX more deeply through a personal project called [*Minigun*](https://github.com/ProRedCat/minigun) — a modernized UI for Raygun’s platform that wraps the V3 API. It allows users to authenticate with their own personal access tokens and view their data through a cleaner interface. I’d previously used HTMX in production at Raygun for our AI Error Resolution product, so this felt like a good opportunity to push the integration further and see how well it holds up in a groud-up rewrite.
