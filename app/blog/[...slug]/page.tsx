@@ -7,9 +7,9 @@ import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
 
 interface PostPageProps {
-    params: Promise<{
+    params: {
         slug: string[];
-    }>
+    };
 }
 
 async function getPostFromParams(params: PostPageProps["params"]) {
@@ -22,7 +22,7 @@ export async function generateStaticParams(): Promise<PostPageProps["params"][]>
 }
 
 export default async function PostPage(props: PostPageProps) {
-    const params = await props.params;
+    const params = props.params;
     const post = await getPostFromParams(params);
 
     // TODO: Create a custom 404 page as the default looks bad
