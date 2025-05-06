@@ -14,12 +14,12 @@ export default function Home() {
                     </p>
                 </div>
                 <div className="text-lg flex flex-col w-full gap-2">
-                    <a href="/projects" className="inline-block px-4 py-2 bg-primary-navy-dark text-primary-cream rounded-lg text-center">
+                    <Link href="/projects" className="inline-block px-4 py-2 bg-primary-navy-dark text-primary-cream rounded-lg text-center">
                         🔗 Check out my projects
-                    </a>
-                    <a href="/blog" className="px-3 py-1 border-2 border-primary-navy-dark rounded-md text-center">
+                    </Link>
+                    <Link href="/blog" className="px-3 py-1 border-2 border-primary-navy-dark rounded-md text-center">
                         📖 Read my blog
-                    </a>
+                    </Link>
                 </div>
             </div>
             <div className="flex justify-center items-center w-48 md:w-auto">
