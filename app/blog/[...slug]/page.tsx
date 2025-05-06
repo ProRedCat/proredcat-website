@@ -7,23 +7,23 @@ import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
 
 interface PostPageProps {
-    params: {
+    params: Promise<{
         slug: string[];
-    };
+    }>;
 }
 
-async function getPostFromParams(params: PostPageProps["params"]) {
+async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
     return posts.find(post => post.slugAsParams === slug);
 }
 
-export async function generateStaticParams(): Promise<PostPageProps["params"][]> {
+export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
     return posts.map((post) => ({ slug: post.slugAsParams.split("/") }));
 }
 
 export default async function PostPage(props: PostPageProps) {
-    const params = props.params;
-    const post = await getPostFromParams(params);
+    const resolvedParams = await props.params;
+    const post = await getPostFromParams(resolvedParams);
 
     // TODO: Create a custom 404 page as the default looks bad
     if (!post || !post.published) {
