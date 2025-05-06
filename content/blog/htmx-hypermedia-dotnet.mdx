@@ -43,3 +43,140 @@ This approach brings back a level of clarity we’ve lost. You no longer need to
 ## Digging deeper - ASP.NET and HTMX
 
 HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, Go with Templ, Ruby on Rails, Laravel, and many others. Since I primarily work with .NET, I decided to explore HTMX more deeply through a personal project called [*Minigun*](https://github.com/ProRedCat/minigun) — a modernized UI for Raygun’s platform that wraps the V3 API. It allows users to authenticate with their own personal access tokens and view their data through a cleaner interface. I’d previously used HTMX in production at Raygun for our AI Error Resolution product, so this felt like a good opportunity to push the integration further and see how well it holds up in a groud-up rewrite.
+
+
+### Minigun example
+
+I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth—so our UI updates stay simple and declarative.
+
+```csharp showLineNumbers title="_ErrorGroups.cshtml"
+<div id="error-groups-wrapper"
+     hx-get="@Url.Action("ErrorGroupsPartial", "CrashReporting")"
+     hx-include="#selected-application, #startTime, #endTime"
+     hx-target="#error-groups-content"
+     hx-indicator="#error-groups-content"
+     hx-swap="outerHTML"
+     hx-trigger="load once, applicationSelected from:document, dateRangeSelected from:document">
+    @await Html.PartialAsync("_ErrorGroups", Model.ErrorGroups)
+</div>
+```
+
+Here’s what’s happening under the hood:
+
+1. **Requesting the right fragment**
+When this `div` fires, `hx-get` calls my `ErrorGroupsPartial` action. I’m not shipping data—HTMX asks the server for the exact HTML snippet that should go inside `_ErrorGroups`, complete with table rows, status badges, and whatever markup I need.
+
+2. **Embedding state into the request**
+With `hx-include="#selected-application, #startTime, #endTime"`, HTMX grabs the current values of those inputs (the dropdown and the date pickers) and appends them as query parameters. That means the server always knows exactly which application and time range to render—no extra serialization logic or client‑side stores required.
+
+3. **Targeted swapping**
+The combination of `hx-target="#error-groups-content"` and `hx-swap="outerHTML"` tells HTMX to replace only the inner wrapper of the error‑groups partial. The rest of the page—navigation, filters, layout—stays untouched.
+
+4. **Visual feedback**
+`hx-indicator="#error-groups-content"` links a spinner or loading class to that same container, so the user gets instant feedback while the new fragment loads.
+
+5. **Event‑driven updates**
+By declaring `hx-trigger="load once, applicationSelected from:document, dateRangeSelected from:document"`, I wire this snippet up to three lifecycle moments:
+
+* **On initial load** (once), so the content is populated when the page first renders.
+* **After an `applicationSelected`** event anywhere in the document.
+* **After a `dateRangeSelected`** event anywhere in the document.
+
+Any component on the page can broadcast those events—say, a custom dropdown or a date‑picker script—and this HTMX block automatically refetches the error groups with the new context.
+
+On the server side, my controller action simply reads those query parameters, calls into the Raygun V3 API, and returns the partial view:
+
+```csharp showLineNumbers title="CrashReportingController.cs"
+[HttpGet("/crashreporting/error-groups")]
+public async Task<IActionResult> ErrorGroupsPartial(
+    [FromQuery] string applicationIdentifier,
+    [FromQuery] DateTime startTime,
+    [FromQuery] DateTime endTime)
+{
+    var errorGroups = await _raygunApiService.ListErrorGroupsAsync(
+        applicationIdentifier,
+        orderby: ["lastOccurredAt desc"]);
+
+    // Update the browser’s URL without a full reload
+    Response.Headers.Append("HX-Push", $"/crashreporting/{applicationIdentifier}/");
+    return PartialView("_ErrorGroups", errorGroups);
+}
+```
+
+Adding an `HX-Push` header lets HTMX update the browser’s address bar to match the current view—so your Back/Forward buttons still work, and you can bookmark or share the URL. The end result feels as snappy as a SPA: partial updates, history management, and loading indicators—all without writing a single line of bespoke JavaScript.
+
+These snippets are pulled straight from the app—no redactions, no tricks. That’s exactly why I love HTMX: it’s simple, fast, and so easy to work with.
+
+### Beyond the defaults: Crafting Your Own HTMX experience
+
+From using HTMX myself and seeing how other use it in both .NET and other languages (their Discord is a great resource), I've found that there are so many ways for you to express what you want to do.
+
+One feature I've wanted to use, but I haven't been able to get working in the way I want is Out of Band swaps. This is another great feature of HTMX, effectively you can return multiple HTML fragements that both replace the compontent you target, and replace multiple other pieces on the page too.
+
+```javascript
+<!-- main swap goes here -->
+<div id="comments">
+  <div class="comment">…new comment…</div>
+</div>
+
+<!-- out‑of‑band updates below -->
+<div id="unread-badge"
+     hx-swap-oob="true">
+  5
+</div>
+
+<div id="page-title"
+     hx-swap-oob="outerHTML">
+  <h1>Comments (5)</h1>
+</div>
+```
+
+In the example above we have the main swap, and then all we need to do is add `hx-swap-oob="true"` (or the specific swap strategy such as `outerHTML`) and it will replace all these components.
+
+The main issue I come across is this idea of multiple partial views, we could easily do this in ASP.NET Core by creating multiple `.cshtml` files which have the combinations of which views we want to replace. What I find annoying here is having to create **every** combination that I want to use.
+
+What I would like is something in the vein similar to `return Partial(view, model)` such as `return MultiPartialView((view, model), (view, model))`. Effectively a native multi partial view return type. This would allow the flexibility to choose whatever I want to return.
+
+I've experimented a bit with the Razor view engine to see if I can make extension on that, but the best I have come up with is something you inject - which is not as nice as what we already have with `return View(view, model)`. If I do figure this out I'll likely update this section of the blog, or if anyone reading this has solved this issue feel free to reach out as I'd love to use something like this.
+
+Another really nice extension I've made is on top of ASP.NET Core's `Url.Action`, you may have spotted that in the Minigun example, but this effectively generates the **correct** URL for a given controller and action.
+
+Now the issue I run into a lot is when refactoring or when collaborators change things it's possible for the `Url.Action` to return `null`, with `.cshtml` the attribute you assigned that value to is removed when rendered. If you have for example an `hx-get` your `hx-get` will no longer be there, and you'll click away wondering why you can't navigate.
+
+To solve this I created `Url.SafeAction` which wraps `Url.Action` with an extension. This will throw errors and tell you the specific controller and action it tried to make a link for but failed to. This way you know immediately when a link is broken instead of finding it days later.
+
+```csharp showLineNumbers title="SafeurlHelperExtensions.cs"
+// This will alert me now if the link wasn't generated
+var url = Url.SafeAction("ErrorTimeseriesPartial", "CrashReporting")
+
+
+public static string SafeAction(this IUrlHelper helper, string? action, string? controller, object? values)
+{
+    ArgumentNullException.ThrowIfNull(helper);
+
+    var url = helper.Action(action, controller, values);
+    if (url is not null)
+    {
+        return url;
+    }
+
+    var actionName = action ?? "<null>";
+    var controllerName = controller ?? "<null>";
+    throw new InvalidOperationException($"Failed to generate URL for action '{actionName}' on controller '{controllerName}'.");
+}
+```
+
+This extension has honestly helped so much since I created it as it's caught quite a few bugs. The only thing that is annoying is that this won't integrate with IntelliSense, so I cannot navigate to a action's function or a controller compared to `Url.Action`. There may be some solutions here such as Roslyn Analyzers or something else, so if anyone has ideas again feel free to reach out!
+
+If you're interested in using `Url.SafeAction` here's the [Gist](https://youtu.be/dQw4w9WgXcQ) for you to use it in your own project
+
+## Embracing complexity (just a little) - Vue after HTMX
+
+- Took a break while writing this
+- Used HTMX more with work related pieces
+- Running into situations where I'm not actually liking HTMX too much
+    - Actually depends on people using it correctly
+    - Frontend frameworks may have the same issue?
+    - Reactivity is still quite annoying, and with increasing demands for it, HTMX might not be the choice
+- Creating a Vue.js app and I am really liking it so far, and it's solving a lot of pain points I'm having
+    - It's also not a full "fat" framework which is really nice
