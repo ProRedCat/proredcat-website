@@ -1,6 +1,6 @@
 ---
 title: "Rediscovering Hypermedia in a Component-Obsessed World"
-date: 2025-03-30
+date: 2025-05-8
 description: "Discover how HTMX leverages server‑rendered HTML and hypermedia principles to add interactivity in ASP.NET Core apps without sprawling JavaScript. Through real‑world example like Minigun, out‑of‑band swaps, and SafeAction helpers. You’ll learn how HTMX simplifies development and when a lightweight Vue layer can fill in the gaps"
 shortDescription: "Hypermedia driven interactivity with HTMX in ASP.NET Core: simple, fast, and focused."
 hero: /blog/htmx-hypermedia-dotnet/htmx-logo-512.png
@@ -199,11 +199,11 @@ Sometimes, though, HTMX just does not suffice. One great YouTube video that goes
 The main crux of his argument is that while we can do a lot with HTMX, its range of interactivity is inherently limited since we don’t have client‑side stores or reactive components.
 
 <div className="w-full flex flex-col justify-center items-center">
-    <Image src="/blog/htmx-hypermedia-dotnet/theo-t3-htmx-react.png" width={480} height={0} />
+    <Image src="/blog/htmx-hypermedia-dotnet/theo-t3-htmx-react.png" width={480} height={0} alt="Theo Browne video screenshot" />
     <p>Source: The Truth About HTMX — Theo Browne</p>
 </div>
 
-In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity—it can get quite annoying.
+In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity, and sometimes it can get quite annoying.
 
 For example, if we want a value to change in real time in two places (without requesting a partial **every** time), we have to use `document.querySelector`. This gets messy **very** quickly, and you’ll often find yourself running into null references because some HTML wasn’t there when you expected it to be.
 
