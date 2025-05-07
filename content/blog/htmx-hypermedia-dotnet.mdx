@@ -18,6 +18,8 @@ This increased complexity for the sake of flexibility becomes a huge pain point 
 
 So why should it be so complex? What was wrong with the old way of writing web applications?
 
+---
+
 ## The old way wasn't broken
 
 Server-rendered HTML worked. You'd request a page, and the server would send back exactly what you needed — fully formed, ready to render. No hydration, no mismatched state, no waiting for JavaScript bundles to load before anything meaningful showed up. It was simple, reliable, and surprisingly fast.
@@ -30,6 +32,8 @@ Even now, with frameworks like React Server Components and Next.js 13+ moving re
 
 HTMX takes a different approach. It doesn’t try to reinvent the web. It leans into it — using hypermedia and server-rendered fragments to bring interactivity without surrendering simplicity. It reminds us that maybe the old way wasn’t broken — just forgotten.
 
+---
+
 ## What HTMX brings to the table
 
 HTMX allows you to build interactive web pages just by serving HTML. It extends HTML with attributes like `hx-get`, `hx-post`, and `hx-swap`, which let you request and update parts of the page without writing any JavaScript.
@@ -39,6 +43,8 @@ Want to submit a form and update part of the page with the result? Just add `hx-
 The philosophy is simple: HTML is the state. The server knows what the user should see — whether that’s a specific profile, a dashboard panel, or an error message — and it renders the correct HTML in response. There’s no need for a client-side store or hydration logic. If a user’s ID is 2, that state is embedded directly into the markup or link, for example as `hx-get="/users/2/details"`, and the server responds accordingly.
 
 This approach brings back a level of clarity we’ve lost. You no longer need to think in terms of client and server as separate worlds. Your UI can simply be HTML fragments and conventional HTTP routes, with HTMX acting as the bridge that adds interactivity exactly where it’s needed.
+
+---
 
 ## Digging deeper - ASP.NET and HTMX
 
@@ -107,48 +113,54 @@ Adding an `HX-Push` header lets HTMX update the browser’s address bar to match
 
 These snippets are pulled straight from the app—no redactions, no tricks. That’s exactly why I love HTMX: it’s simple, fast, and so easy to work with.
 
-### Beyond the defaults: Crafting Your Own HTMX experience
+---
 
-From using HTMX myself and seeing how other use it in both .NET and other languages (their Discord is a great resource), I've found that there are so many ways for you to express what you want to do.
+### Beyond the defaults: Crafting your own HTMX experience
 
-One feature I've wanted to use, but I haven't been able to get working in the way I want is Out of Band swaps. This is another great feature of HTMX, effectively you can return multiple HTML fragements that both replace the compontent you target, and replace multiple other pieces on the page too.
+From using HTMX myself and seeing how others use it in both .NET and other languages (their Discord server is a great resource), I’ve found there are so many ways to express exactly what you want to do.
 
-```javascript
-<!-- main swap goes here -->
+One feature I’ve wanted to use but haven’t been able to get working as I’d like is out‑of‑band swaps. With HTMX, you can return multiple HTML fragments that not only replace your target component but also update other parts of the page:
+
+```html showLineNumbers
+<!-- main swap -->
 <div id="comments">
   <div class="comment">…new comment…</div>
 </div>
 
-<!-- out‑of‑band updates below -->
-<div id="unread-badge"
-     hx-swap-oob="true">
+<!-- out‑of‑band updates -->
+<div id="unread-badge" hx-swap-oob="true">
   5
 </div>
 
-<div id="page-title"
-     hx-swap-oob="outerHTML">
+<div id="page-title" hx-swap-oob="outerHTML">
   <h1>Comments (5)</h1>
 </div>
 ```
 
-In the example above we have the main swap, and then all we need to do is add `hx-swap-oob="true"` (or the specific swap strategy such as `outerHTML`) and it will replace all these components.
+In the example above, HTMX does the main swap and then applies every fragment tagged with `hx-swap-oob` indicated by the id, with the swap strategies specific such as `outerHTML`.
 
-The main issue I come across is this idea of multiple partial views, we could easily do this in ASP.NET Core by creating multiple `.cshtml` files which have the combinations of which views we want to replace. What I find annoying here is having to create **every** combination that I want to use.
+The challenge I keep running into is managing multiple partial views. In ASP.NET Core, you’d have to bake every replacement combination into its own `.cshtml` file. Maintaining **every** variation quickly becomes a headache.
 
-What I would like is something in the vein similar to `return Partial(view, model)` such as `return MultiPartialView((view, model), (view, model))`. Effectively a native multi partial view return type. This would allow the flexibility to choose whatever I want to return.
+What I’d love is something like this:
 
-I've experimented a bit with the Razor view engine to see if I can make extension on that, but the best I have come up with is something you inject - which is not as nice as what we already have with `return View(view, model)`. If I do figure this out I'll likely update this section of the blog, or if anyone reading this has solved this issue feel free to reach out as I'd love to use something like this.
+```csharp showLineNumbers
+return Partial(view, model);
 
-Another really nice extension I've made is on top of ASP.NET Core's `Url.Action`, you may have spotted that in the Minigun example, but this effectively generates the **correct** URL for a given controller and action.
+// vs.
 
-Now the issue I run into a lot is when refactoring or when collaborators change things it's possible for the `Url.Action` to return `null`, with `.cshtml` the attribute you assigned that value to is removed when rendered. If you have for example an `hx-get` your `hx-get` will no longer be there, and you'll click away wondering why you can't navigate.
+return MultiPartialView((view, model), (view, model));
+```
 
-To solve this I created `Url.SafeAction` which wraps `Url.Action` with an extension. This will throw errors and tell you the specific controller and action it tried to make a link for but failed to. This way you know immediately when a link is broken instead of finding it days later.
+A first‑class `MultiPartialView` would let you return whichever fragments you need on the fly. I’ve poked around the Razor view engine to build an extension, but the nicest thing I’ve come up with so far still feels like a hack compared to the built‑in `return View(view, model)`. If I land on a cleaner solution I’ll update this post, and of course, if you’ve already solved it please reach out!
 
-```csharp showLineNumbers title="SafeurlHelperExtensions.cs"
-// This will alert me now if the link wasn't generated
-var url = Url.SafeAction("ErrorTimeseriesPartial", "CrashReporting")
+---
 
+Another small extension I built sits on top of ASP.NET Core’s `Url.Action`. You’ve probably seen `Url.Action` it in the Minigun example, and for context on those that haven't used ASP.NET Core this generates the URL for a specific server action. The issue I encounter is when you refactor, rename, or reference an action incorrectly `Url.Action` can start returning `null`. In a Razor view that silently drops the attribute, so your `hx-get` just vanishes...
+
+To catch that immediately, I created `Url.SafeAction`, which throws a clear exception if the URL is null (and tells you exactly which controller/action failed). If this was there, there is no more wondering why your link silently broke.
+
+```csharp showLineNumbers title="SafeUrlHelperExtensions.cs"
+var url = Url.SafeAction("ErrorTimeseriesPartial", "CrashReporting");
 
 public static string SafeAction(this IUrlHelper helper, string? action, string? controller, object? values)
 {
@@ -156,9 +168,7 @@ public static string SafeAction(this IUrlHelper helper, string? action, string? 
 
     var url = helper.Action(action, controller, values);
     if (url is not null)
-    {
         return url;
-    }
 
     var actionName = action ?? "<null>";
     var controllerName = controller ?? "<null>";
@@ -166,17 +176,52 @@ public static string SafeAction(this IUrlHelper helper, string? action, string? 
 }
 ```
 
-This extension has honestly helped so much since I created it as it's caught quite a few bugs. The only thing that is annoying is that this won't integrate with IntelliSense, so I cannot navigate to a action's function or a controller compared to `Url.Action`. There may be some solutions here such as Roslyn Analyzers or something else, so if anyone has ideas again feel free to reach out!
+This helper has already saved me from a few bugs. The only downside is losing IntelliSense “Go to definition” on the link helper, but maybe a Roslyn analyzer or VS extension could bridge that. I'm welcome to any ideas here as I'd love to use it more.
 
-If you're interested in using `Url.SafeAction` here's the [Gist](https://youtu.be/dQw4w9WgXcQ) for you to use it in your own project
+If you want to try out `Url.SafeAction`, you can grab the [Gist here](https://gist.github.com/ProRedCat/bd579e7fe8471dfa184bd0cd1b8b144e).
 
-## Embracing complexity (just a little) - Vue after HTMX
+---
 
-- Took a break while writing this
-- Used HTMX more with work related pieces
-- Running into situations where I'm not actually liking HTMX too much
-    - Actually depends on people using it correctly
-    - Frontend frameworks may have the same issue?
-    - Reactivity is still quite annoying, and with increasing demands for it, HTMX might not be the choice
-- Creating a Vue.js app and I am really liking it so far, and it's solving a lot of pain points I'm having
-    - It's also not a full "fat" framework which is really nice
+## Embracing complexity (just a little) — Vue after HTMX
+
+Peeking behind the curtain, I took about a month and a half off from writing this blog. During that break, a few of my opinions shifted as I explored new technologies and ran into a handful of headaches. The “Beyond the defaults” section and this one were both drafted in that fresh writing session.
+
+With my views updated, I wanted to use this section to chat about Vue and where HTMX falls short.
+
+---
+
+At Autohive (the next evolution of Raygun where I work), we’re building a platform where AI agents and people can interact together to get work done. One of the technical decisions we made here was to use HTMX and ASP.NET Core. This has been incredibly successful so far, but that’s not to say everything is perfect with HTMX.
+
+One issue is convention over configuration. Not everyone has developed an intuition for how to use HTMX, which leads to some arguably incorrect usage. For example, where a smart design of HTML with HTMX sprinkled in could have sufficed, sometimes people reach straight for JavaScript—especially inline `<script>` tags. This increases the maintenance burden in areas where it isn’t required.
+
+Sometimes, though, HTMX just does not suffice. One great YouTube video that goes over this is by Theo Browne, called [The Truth About HTMX](https://youtu.be/NA5Fcgs_viU).
+
+The main crux of his argument is that while we can do a lot with HTMX, its range of interactivity is inherently limited since we don’t have client‑side stores or reactive components.
+
+<div className="w-full flex flex-col justify-center items-center">
+    <Image src="/blog/htmx-hypermedia-dotnet/theo-t3-htmx-react.png" width={480} height={0} />
+    <p>Source: The Truth About HTMX — Theo Browne</p>
+</div>
+
+In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity—it can get quite annoying.
+
+For example, if we want a value to change in real time in two places (without requesting a partial **every** time), we have to use `document.querySelector`. This gets messy **very** quickly, and you’ll often find yourself running into null references because some HTML wasn’t there when you expected it to be.
+
+In a frontend framework such as Vue, you could have a Pinia store to manage shared state across your application: change one value, and it’s reflected everywhere at once without worrying about manual updates.
+
+---
+
+During my break, I started experimenting with `Vue.js` in a personal project I’ll be announcing soon. Transitioning to Vue after encountering HTMX’s limitations has been a real breath of fresh air.
+
+What I like most about Vue is that it’s not a “full‑fat” framework. It addresses a lot of pain points—like shared state via Pinia—while remaining quite “low level” in how you write the UI.
+
+You have a `<template>` for your HTML, a `<script>` that runs on component load (glossing a bit here), and a `<style>` for CSS (though I use Tailwind instead). With both component‑level and shared state, this setup solves many of the issues I have with HTMX.
+
+One thought I do have is that even though these frameworks will solve interactivity issues, we’ll still face challenges with convention over configuration as every engineer has their own preference and bias.
+
+---
+
+## Closing thoughts
+Stepping back, this detour into Vue reminded me why I love tackling engineering challenges across domains and choosing the right tool for each problem. HTMX delivered raw speed; Vue added clear structure. Together, they’ve made me a more versatile engineer.
+
+I would definitely still reach for HTMX in a heartbeat, but I'm also really interested to learn more about Vue. If there are any takeaways from this blog, the main one is just give HTMX a try, you may love it, you may hate it, but I definitely love it.
