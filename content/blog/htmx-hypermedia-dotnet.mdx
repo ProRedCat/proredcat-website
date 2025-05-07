@@ -1,8 +1,8 @@
 ---
 title: "Rediscovering Hypermedia in a Component-Obsessed World"
 date: 2025-03-30
-description: This blog explores how HTMX and ASP.NET Core enable a hypermedia-driven approach to building modern web apps—without the complexity of client-side frameworks. It compares HTMX with React and Blazor, outlines tradeoffs, and draws from real-world projects like Minigun and a startup AI platform.
-shortDescription: A deep dive into building hypermedia-first UIs with HTMX and ASP.NET Core, and how it compares to React and Blazor.
+description: "Discover how HTMX leverages server‑rendered HTML and hypermedia principles to add interactivity in ASP.NET Core apps without sprawling JavaScript. Through real‑world example like Minigun, out‑of‑band swaps, and SafeAction helpers. You’ll learn how HTMX simplifies development and when a lightweight Vue layer can fill in the gaps"
+shortDescription: "Hypermedia driven interactivity with HTMX in ASP.NET Core: simple, fast, and focused."
 hero: /blog/htmx-hypermedia-dotnet/htmx-logo-512.png
 published: true
 tags: ["HTMX", "ASP.NET Core", "Hypermedia", "Web Architecture", "Technical"]
@@ -53,7 +53,7 @@ HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, G
 
 ### Minigun example
 
-I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth—so our UI updates stay simple and declarative.
+I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth, so our UI updates stay simple and declarative.
 
 ```csharp showLineNumbers title="_ErrorGroups.cshtml"
 <div id="error-groups-wrapper"
@@ -70,16 +70,16 @@ I mentioned before that HTML is the state, and in Minigun you can see this princ
 Here’s what’s happening under the hood:
 
 1. **Requesting the right fragment**
-When this `div` fires, `hx-get` calls my `ErrorGroupsPartial` action. I’m not shipping data—HTMX asks the server for the exact HTML snippet that should go inside `_ErrorGroups`, complete with table rows, status badges, and whatever markup I need.
+When this `div` fires, `hx-get` calls my `ErrorGroupsPartial` action. HTMX requests the server for the HTML fragment that should go inside `_ErrorGroups`, complete with table rows, status badges, and whatever markup I need.
 
 2. **Embedding state into the request**
-With `hx-include="#selected-application, #startTime, #endTime"`, HTMX grabs the current values of those inputs (the dropdown and the date pickers) and appends them as query parameters. That means the server always knows exactly which application and time range to render—no extra serialization logic or client‑side stores required.
+With `hx-include="#selected-application, #startTime, #endTime"`, HTMX grabs the current values of those inputs (the dropdown and the date pickers) and appends them as query parameters. That means the server always knows exactly which application and time range to render.
 
 3. **Targeted swapping**
-The combination of `hx-target="#error-groups-content"` and `hx-swap="outerHTML"` tells HTMX to replace only the inner wrapper of the error‑groups partial. The rest of the page—navigation, filters, layout—stays untouched.
+The combination of `hx-target="#error-groups-content"` and `hx-swap="outerHTML"` tells HTMX to replace only the inner content of the error‑groups partial. The rest of the page navigation, filters, and layout stays untouched.
 
 4. **Visual feedback**
-`hx-indicator="#error-groups-content"` links a spinner or loading class to that same container, so the user gets instant feedback while the new fragment loads.
+`hx-indicator="#error-groups-content"` adds an `htmx-indicator` class to the specific element, this can be used for conditionally displaying loading spinners so the user gets instant feedback while the new fragment loads.
 
 5. **Event‑driven updates**
 By declaring `hx-trigger="load once, applicationSelected from:document, dateRangeSelected from:document"`, I wire this snippet up to three lifecycle moments:
@@ -88,7 +88,7 @@ By declaring `hx-trigger="load once, applicationSelected from:document, dateRang
 * **After an `applicationSelected`** event anywhere in the document.
 * **After a `dateRangeSelected`** event anywhere in the document.
 
-Any component on the page can broadcast those events—say, a custom dropdown or a date‑picker script—and this HTMX block automatically refetches the error groups with the new context.
+Any component on the page can broadcast those events for example, a custom dropdown or a date‑picker script. This HTMX block will then automatically refetches the error groups with up-to-date data.
 
 On the server side, my controller action simply reads those query parameters, calls into the Raygun V3 API, and returns the partial view:
 
@@ -109,9 +109,9 @@ public async Task<IActionResult> ErrorGroupsPartial(
 }
 ```
 
-Adding an `HX-Push` header lets HTMX update the browser’s address bar to match the current view—so your Back/Forward buttons still work, and you can bookmark or share the URL. The end result feels as snappy as a SPA: partial updates, history management, and loading indicators—all without writing a single line of bespoke JavaScript.
+Adding an `HX-Push` header lets HTMX update the browser’s address bar to match the current view so your Back/Forward buttons still work, and you can bookmark or share the URL. The end result feels as snappy as a SPA: partial updates, history management, and loading indicators, all without writing a single line of bespoke JavaScript.
 
-These snippets are pulled straight from the app—no redactions, no tricks. That’s exactly why I love HTMX: it’s simple, fast, and so easy to work with.
+These snippets are pulled straight from the app—no redactions, no tricks. That’s exactly why I love HTMX - it’s simple, fast, and so easy to work with.
 
 ---
 
