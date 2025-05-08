@@ -48,12 +48,12 @@ This approach brings back a level of clarity we’ve lost. You no longer need to
 
 ## Digging deeper - ASP.NET and HTMX
 
-HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, Go with Templ, Ruby on Rails, Laravel, and many others. Since I primarily work with .NET, I decided to explore HTMX more deeply through a personal project called [*Minigun*](https://github.com/ProRedCat/minigun) — a modernized UI for Raygun’s platform that wraps the V3 API. It allows users to authenticate with their own personal access tokens and view their data through a cleaner interface. I’d previously used HTMX in production at Raygun for our AI Error Resolution product, so this felt like a good opportunity to push the integration further and see how well it holds up in a groud-up rewrite.
+HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, Go with Templ, Ruby on Rails, Laravel, and many others. Since I primarily work with .NET, I decided to explore HTMX more deeply through a personal project called [*Minigun*](https://github.com/ProRedCat/minigun) — a modernized UI for Raygun’s platform that wraps the V3 API. It allows users to authenticate with their own personal access tokens and view their data through a cleaner interface. I’d previously used HTMX in production at Raygun for our AI Error Resolution product, so this felt like a good opportunity to push the integration further and see how well it holds up in a ground-up rewrite.
 
 
 ### Minigun example
 
-I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth, so our UI updates stay simple and declarative.
+I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth, so our UI updates stay simple and declarative.
 
 ```csharp showLineNumbers title="_ErrorGroups.cshtml"
 <div id="error-groups-wrapper"
@@ -190,7 +190,7 @@ With my views updated, I wanted to use this section to chat about Vue and where 
 
 ---
 
-At Autohive (the next evolution of Raygun where I work), we’re building a platform where AI agents and people can interact together to get work done. One of the technical decisions we made here was to use HTMX and ASP.NET Core. This has been incredibly successful so far, but that’s not to say everything is perfect with HTMX.
+I’ve been using HTMX a lot at work — specifically on **Autohive**, a new initiative we’re building alongside Raygun. It’s a technically ambitious platform focused on enabling collaboration between AI agents and people. We’ve used HTMX for the whole application and it’s worked really well so far. It's quick to ship, easy to understand — but working with it day to day has also surfaced a few interesting limitations. Not dealbreakers, just areas where things start to feel a little awkward or brittle as complexity grows. That’s what led me to explore other options like Vue, and rethink where HTMX fits best in my own projects.
 
 One issue is convention over configuration. Not everyone has developed an intuition for how to use HTMX, which leads to some arguably incorrect usage. For example, where a smart design of HTML with HTMX sprinkled in could have sufficed, sometimes people reach straight for JavaScript—especially inline `<script>` tags. This increases the maintenance burden in areas where it isn’t required.
 
@@ -203,9 +203,9 @@ The main crux of his argument is that while we can do a lot with HTMX, its range
     <p>Source: The Truth About HTMX — Theo Browne</p>
 </div>
 
-In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity, and sometimes it can get quite annoying.
+In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity, and sometimes it can get quite messy.
 
-For example, if we want a value to change in real time in two places (without requesting a partial **every** time), we have to use `document.querySelector`. This gets messy **very** quickly, and you’ll often find yourself running into null references because some HTML wasn’t there when you expected it to be.
+For example, if we want a value to change in real time in two places (without requesting a partial **every** time), we have to use `document.querySelector` everywhere. This gets messy **very** quickly, and you’ll often find yourself running into null references because some HTML wasn’t there when you expected it to be.
 
 In a frontend framework such as Vue, you could have a Pinia store to manage shared state across your application: change one value, and it’s reflected everywhere at once without worrying about manual updates.
 
@@ -217,7 +217,7 @@ What I like most about Vue is that it’s not a “full‑fat” framework. It a
 
 You have a `<template>` for your HTML, a `<script>` that runs on component load (glossing a bit here), and a `<style>` for CSS (though I use Tailwind instead). With both component‑level and shared state, this setup solves many of the issues I have with HTMX.
 
-One thought I do have is that even though these frameworks will solve interactivity issues, we’ll still face challenges with convention over configuration as every engineer has their own preference and bias.
+One thought I do have is that even though frameworks like Vue solve many interactivity issues, the broader challenge of convention over configuration never really disappears. Every team brings different habits, preferences, and trade-offs into their work, whether they’re writing vanilla HTML or composing Vue components. In that sense, the real learning is not just in picking the right tool, but in learning to work within and around its constraints - something I’ve had to do with both HTMX and Vue.
 
 ---
 
@@ -225,3 +225,15 @@ One thought I do have is that even though these frameworks will solve interactiv
 Stepping back, this detour into Vue reminded me why I love tackling engineering challenges across domains and choosing the right tool for each problem. HTMX delivered raw speed; Vue added clear structure. Together, they’ve made me a more versatile engineer.
 
 I would definitely still reach for HTMX in a heartbeat, but I'm also really interested to learn more about Vue. If there are any takeaways from this blog, the main one is just give HTMX a try, you may love it, you may hate it, but I definitely love it.
+
+
+## …but what’s next?
+After spending all this time simplifying the frontend, I started thinking about my own browsing experience.
+
+I’ve nearly tried more browsers than HTMX has swap modes — from Chrome to Opera GX, back to Chrome (classic), then over to Arc, Zen, and now… Dia. I keep telling myself I’ve found *the* one, but the tabs keep opening — both literally and metaphorically.
+
+So if you’ve ever installed a new browser just because the tab animation felt ✨vibey✨, or spent an hour customizing the sidebar before opening a single site, you might enjoy my next post:
+
+“Just one more browser I swear” - a very personal deep dive into my browser-hopping saga, the pros, the quirks, and why I apparently treat browsers like Pokémon.
+
+Stay tuned - and no, I don’t need an intervention. Yet.
