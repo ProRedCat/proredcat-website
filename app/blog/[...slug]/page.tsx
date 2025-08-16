@@ -23,6 +23,46 @@ export async function generateStaticParams(): Promise<PostPageProps["params"][]>
 
 export default async function PostPage({params}: PostPageProps) {
     const post = await getPostFromParams(params);
+    const resolvedParams = await props.params;
+    const post = await getPostFromParams(resolvedParams);
+
+    if (!post) {
+        return {};
+    }
+
+    const ogImage = post.hero ? `https://proredcat.com${post.hero}` : 'https://proredcat.com/blog/default-hero-image.JPG';
+
+    return {
+        title: post.title,
+        description: post.description,
+        openGraph: {
+            title: post.title,
+            description: post.description,
+            type: 'article',
+            publishedTime: post.date,
+            authors: ['Reilly Oldham'],
+            tags: post.tags,
+            images: [
+                {
+                    url: ogImage,
+                    width: 1200,
+                    height: 630,
+                    alt: post.title,
+                }
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: post.title,
+            description: post.description,
+            images: [ogImage],
+        },
+    };
+}
+
+export default async function PostPage(props: PostPageProps) {
+    const resolvedParams = await props.params;
+    const post = await getPostFromParams(resolvedParams);
 
     // TODO: Create a custom 404 page as the default looks bad
     if (!post || !post.published) {
