@@ -1,9 +1,13 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "About Me - Reilly Oldham",
+    description: "Learn more about Reilly Oldham - software engineer, backend specialist, and full-stack developer.",
+};
+
 export default function AboutPage() {
-    return <div className="flex pt-16 justify-center items-center bg-primary-cream">
-        <div className="w-full max-w-md p-6 border-4 border-primary-navy-dark rounded-lg">
-            <p className="italic text-primary-navy-dark text-lg">
-                This page is also under construction
-            </p>
+    return (
+        <div className="min-h-screen bg-primary-cream">
         </div>
-    </div>
+    );
 }

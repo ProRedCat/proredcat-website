@@ -2,27 +2,27 @@ import Link from "next/link";
 import {format} from "date-fns";
 import Image from "next/image";
 
-export default function AlexaTransportProject() {
-    const tags = ["Alexa ASK", "TypeScript", "AWS", "Lambda", "Vite"];
-    const releaseDate = new Date(2024, 9, 10);
+export default function MinigunProject() {
+    const tags = ["ASP.NET Core", "HTMX", "C#", ".NET 9", "TailwindCSS", "Bun"];
+    const releaseDate = new Date(2024, 9, 28);
 
     return (
         <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
-            <div className="relative w-full h-52">
+            <div className="relative w-full h-52 bg-[#001B2E]">
                 <Image
-                    src="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
-                    alt="Alexa Skill hero image"
+                    src="/projects/minigun/minigun-dashboard.png"
+                    alt="Minigun dashboard showing error statistics and monitoring"
                     fill
-                    className="object-cover rounded-t-lg"
+                    className="object-contain rounded-t-lg p-2"
                     priority={true}
                 />
             </div>
             
             <div className="p-5 pt-4 flex flex-col flex-grow">
                 <div className="mb-2">
-                    <Link href="/blog/alexa-skill-announcement-wellington-transport"
+                    <Link href="https://github.com/ProRedCat/minigun"
                           className="text-xl font-semibold line-clamp-2 block">
-                        Wellington Public Transport: Alexa Skill
+                        Minigun
                     </Link>
                     <p className="text-sm opacity-70">
                         Launched: {format(releaseDate, 'MMMM d, yyyy')}
@@ -32,9 +32,8 @@ export default function AlexaTransportProject() {
                 <hr/>
 
                 <p className="mb-4 flex-grow line-clamp-3 pt-2">
-                    An Alexa Skill for Wellington&apos;s Metlink transport, offering real-time bus and train schedules.
-                    Designed with hands-free convenience in mind, it&apos;s perfect for busy mornings when checking your
-                    phone isn&apos;t ideal.
+                    A blazingly fast Webapp built on Raygun&apos;s API V3 endpoints to show your crash reporting data in a new modern UI. 
+                    Built with ASP.NET Core and HTMX, it leverages the latest .NET 9 features for optimal performance and developer experience.
                 </p>
 
                 <div className="mt-auto">
@@ -49,16 +48,16 @@ export default function AlexaTransportProject() {
                 </div>
 
                 <div className="flex gap-4 mt-2">
-                    <Link href="https://www.amazon.com.au/dp/B0D2DN6DX9/" 
+                    <Link href="https://github.com/ProRedCat/minigun" 
                           className="text-sm underline">
-                        Alexa Skill Store
+                        GitHub
                     </Link>
-                    <Link href="/blog/alexa-skill-announcement-wellington-transport"
+                    <Link href="https://minigun.proredcat.xyz" 
                           className="text-sm underline">
-                        Blog Post
+                        Live Site
                     </Link>
                 </div>
             </div>
         </div>
     );
-}
+} 

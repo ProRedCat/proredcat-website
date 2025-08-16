@@ -7,17 +7,17 @@ import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
 
 interface PostPageProps {
-    params: {
+    params: Promise<{
         slug: string[];
-    }
+    }>;
 }
 
-async function getPostFromParams(params: PostPageProps["params"]) {
+async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
     return posts.find(post => post.slugAsParams === slug);
 }
 
-export async function generateStaticParams(): Promise<PostPageProps["params"][]> {
+export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
     return posts.map((post) => ({ slug: post.slugAsParams.split("/") }));
 }
 
@@ -73,7 +73,7 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
 
     return (
         <>
-            <article className="container pt-[15vh] prose w-full">
+            <article className="container pt-[15vh] prose w-full mx-auto">
                 <h1 className="mb-2">{post.title}</h1>
                 <div className="mb-4">
                     <p className="text-sm opacity-70">

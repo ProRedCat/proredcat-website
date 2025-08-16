@@ -40,6 +40,9 @@ const config: Config = {
               color: theme('colors.primary-green-dark'),
               borderLeftColor: theme('colors.primary-green-light'),
             },
+            code: {
+              color: theme('colors.primary-navy-dark')
+            }
           },
         },
       }),

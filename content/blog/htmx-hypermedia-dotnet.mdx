@@ -1,0 +1,239 @@
+---
+title: "Rediscovering Hypermedia in a Component-Obsessed World"
+date: 2025-05-8
+description: "Discover how HTMX leverages server‑rendered HTML and hypermedia principles to add interactivity in ASP.NET Core apps without sprawling JavaScript. Through real‑world example like Minigun, out‑of‑band swaps, and SafeAction helpers. You’ll learn how HTMX simplifies development and when a lightweight Vue layer can fill in the gaps"
+shortDescription: "Hypermedia driven interactivity with HTMX in ASP.NET Core: simple, fast, and focused."
+hero: /blog/htmx-hypermedia-dotnet/htmx-logo.png
+published: true
+tags: ["HTMX", "ASP.NET Core", "Hypermedia", "Web Architecture", "Technical"]
+---
+
+One of my formative experiences building for the web was using PHP. Back then, templating with `<?php include 'header.php'; ?>` and `<?php include 'footer.php'; ?>` felt like magic. You’d write some logic, mix it with HTML, and send it straight to the browser. No build tools, no virtual DOM — just a server generating HTML and the browser rendering it.
+
+Fast-forward to now, and the landscape looks very different. If you’re starting a new web project today, the default stack is likely React or Next.js, TypeScript, and an ever-growing list of client-side tooling. Funnily enough, even this blog is built with that setup (and I love it).
+
+But somewhere between PHP and the present, we seem to have traded simplicity for flexibility. The act of rendering a list or submitting a form now involves client-side state, hooks, serializers, and hydration strategies. The client is often treated as the source of truth — and the server, increasingly, is just a JSON API.
+
+This increased complexity for the sake of flexibility becomes a huge pain point when developing frontend applications - especially large ones. I've seen it happen and I'm sure some of the readers of this will have some stories of their own.
+
+So why should it be so complex? What was wrong with the old way of writing web applications?
+
+---
+
+## The old way wasn't broken
+
+Server-rendered HTML worked. You'd request a page, and the server would send back exactly what you needed — fully formed, ready to render. No hydration, no mismatched state, no waiting for JavaScript bundles to load before anything meaningful showed up. It was simple, reliable, and surprisingly fast.
+
+When React and other frameworks took over, the goal was to improve interactivity. And to be fair, they did. Component-based design, fine-grained state management, and client-side routing made rich interfaces easier to build — but at a cost.
+
+We didn’t eliminate round trips — we just changed who made them. Instead of the browser asking the server for a page, the client asked the server for data, then reassembled the UI locally. We gained flexibility, but now had to deal with spinners, loading states, optimistic updates, and layout shifts. We wrote more code, not less. And somehow, rendering a list became an exercise in managing three layers of abstraction.
+
+Even now, with frameworks like React Server Components and Next.js 13+ moving rendering back to the server, it feels like we’re slowly circling back to where we started — just with more tooling and complexity layered on top.
+
+HTMX takes a different approach. It doesn’t try to reinvent the web. It leans into it — using hypermedia and server-rendered fragments to bring interactivity without surrendering simplicity. It reminds us that maybe the old way wasn’t broken — just forgotten.
+
+---
+
+## What HTMX brings to the table
+
+HTMX allows you to build interactive web pages just by serving HTML. It extends HTML with attributes like `hx-get`, `hx-post`, and `hx-swap`, which let you request and update parts of the page without writing any JavaScript.
+
+Want to submit a form and update part of the page with the result? Just add `hx-post="/profile"` to your form and `hx-target="#profile-summary"` to specify where the response should go. HTMX will send the form data via POST, receive an HTML fragment from the server, and update the `#profile-summary` div. You can even update a completely different part of the page than the form itself, making it easy to reflect changes elsewhere in the UI.
+
+The philosophy is simple: HTML is the state. The server knows what the user should see — whether that’s a specific profile, a dashboard panel, or an error message — and it renders the correct HTML in response. There’s no need for a client-side store or hydration logic. If a user’s ID is 2, that state is embedded directly into the markup or link, for example as `hx-get="/users/2/details"`, and the server responds accordingly.
+
+This approach brings back a level of clarity we’ve lost. You no longer need to think in terms of client and server as separate worlds. Your UI can simply be HTML fragments and conventional HTTP routes, with HTMX acting as the bridge that adds interactivity exactly where it’s needed.
+
+---
+
+## Digging deeper - ASP.NET and HTMX
+
+HTMX works well with traditional server-side frameworks like ASP.NET Core MVC, Go with Templ, Ruby on Rails, Laravel, and many others. Since I primarily work with .NET, I decided to explore HTMX more deeply through a personal project called [*Minigun*](https://github.com/ProRedCat/minigun) — a modernized UI for Raygun’s platform that wraps the V3 API. It allows users to authenticate with their own personal access tokens and view their data through a cleaner interface. I’d previously used HTMX in production at Raygun for our AI Error Resolution product, so this felt like a good opportunity to push the integration further and see how well it holds up in a ground-up rewrite.
+
+
+### Minigun example
+
+I mentioned before that HTML is the state, and in Minigun you can see this principle in action on the Crash Reporting page’s error‑groups section. Rather than juggling JSON payloads and client‑side rendering, we treat HTML fragments themselves as the source of truth, so our UI updates stay simple and declarative.
+
+```csharp showLineNumbers title="_ErrorGroups.cshtml"
+<div id="error-groups-wrapper"
+     hx-get="@Url.Action("ErrorGroupsPartial", "CrashReporting")"
+     hx-include="#selected-application, #startTime, #endTime"
+     hx-target="#error-groups-content"
+     hx-indicator="#error-groups-content"
+     hx-swap="outerHTML"
+     hx-trigger="load once, applicationSelected from:document, dateRangeSelected from:document">
+    @await Html.PartialAsync("_ErrorGroups", Model.ErrorGroups)
+</div>
+```
+
+Here’s what’s happening under the hood:
+
+1. **Requesting the right fragment**
+When this `div` fires, `hx-get` calls my `ErrorGroupsPartial` action. HTMX requests the server for the HTML fragment that should go inside `_ErrorGroups`, complete with table rows, status badges, and whatever markup I need.
+
+2. **Embedding state into the request**
+With `hx-include="#selected-application, #startTime, #endTime"`, HTMX grabs the current values of those inputs (the dropdown and the date pickers) and appends them as query parameters. That means the server always knows exactly which application and time range to render.
+
+3. **Targeted swapping**
+The combination of `hx-target="#error-groups-content"` and `hx-swap="outerHTML"` tells HTMX to replace only the inner content of the error‑groups partial. The rest of the page navigation, filters, and layout stays untouched.
+
+4. **Visual feedback**
+`hx-indicator="#error-groups-content"` adds an `htmx-indicator` class to the specific element, this can be used for conditionally displaying loading spinners so the user gets instant feedback while the new fragment loads.
+
+5. **Event‑driven updates**
+By declaring `hx-trigger="load once, applicationSelected from:document, dateRangeSelected from:document"`, I wire this snippet up to three lifecycle moments:
+
+* **On initial load** (once), so the content is populated when the page first renders.
+* **After an `applicationSelected`** event anywhere in the document.
+* **After a `dateRangeSelected`** event anywhere in the document.
+
+Any component on the page can broadcast those events for example, a custom dropdown or a date‑picker script. This HTMX block will then automatically refetches the error groups with up-to-date data.
+
+On the server side, my controller action simply reads those query parameters, calls into the Raygun V3 API, and returns the partial view:
+
+```csharp showLineNumbers title="CrashReportingController.cs"
+[HttpGet("/crashreporting/error-groups")]
+public async Task<IActionResult> ErrorGroupsPartial(
+    [FromQuery] string applicationIdentifier,
+    [FromQuery] DateTime startTime,
+    [FromQuery] DateTime endTime)
+{
+    var errorGroups = await _raygunApiService.ListErrorGroupsAsync(
+        applicationIdentifier,
+        orderby: ["lastOccurredAt desc"]);
+
+    // Update the browser’s URL without a full reload
+    Response.Headers.Append("HX-Push", $"/crashreporting/{applicationIdentifier}/");
+    return PartialView("_ErrorGroups", errorGroups);
+}
+```
+
+Adding an `HX-Push` header lets HTMX update the browser’s address bar to match the current view so your Back/Forward buttons still work, and you can bookmark or share the URL. The end result feels as snappy as a SPA: partial updates, history management, and loading indicators, all without writing a single line of bespoke JavaScript.
+
+These snippets are pulled straight from the app—no redactions, no tricks. That’s exactly why I love HTMX - it’s simple, fast, and so easy to work with.
+
+---
+
+### Beyond the defaults: Crafting your own HTMX experience
+
+From using HTMX myself and seeing how others use it in both .NET and other languages (their Discord server is a great resource), I’ve found there are so many ways to express exactly what you want to do.
+
+One feature I’ve wanted to use but haven’t been able to get working as I’d like is out‑of‑band swaps. With HTMX, you can return multiple HTML fragments that not only replace your target component but also update other parts of the page:
+
+```html showLineNumbers
+<!-- main swap -->
+<div id="comments">
+  <div class="comment">…new comment…</div>
+</div>
+
+<!-- out‑of‑band updates -->
+<div id="unread-badge" hx-swap-oob="true">
+  5
+</div>
+
+<div id="page-title" hx-swap-oob="outerHTML">
+  <h1>Comments (5)</h1>
+</div>
+```
+
+In the example above, HTMX does the main swap and then applies every fragment tagged with `hx-swap-oob` indicated by the id, with the swap strategies specific such as `outerHTML`.
+
+The challenge I keep running into is managing multiple partial views. In ASP.NET Core, you’d have to bake every replacement combination into its own `.cshtml` file. Maintaining **every** variation quickly becomes a headache.
+
+What I’d love is something like this:
+
+```csharp showLineNumbers
+return Partial(view, model);
+
+// vs.
+
+return MultiPartialView((view, model), (view, model));
+```
+
+A first‑class `MultiPartialView` would let you return whichever fragments you need on the fly. I’ve poked around the Razor view engine to build an extension, but the nicest thing I’ve come up with so far still feels like a hack compared to the built‑in `return View(view, model)`. If I land on a cleaner solution I’ll update this post, and of course, if you’ve already solved it please reach out!
+
+---
+
+Another small extension I built sits on top of ASP.NET Core’s `Url.Action`. You’ve probably seen `Url.Action` it in the Minigun example, and for context on those that haven't used ASP.NET Core this generates the URL for a specific server action. The issue I encounter is when you refactor, rename, or reference an action incorrectly `Url.Action` can start returning `null`. In a Razor view that silently drops the attribute, so your `hx-get` just vanishes...
+
+To catch that immediately, I created `Url.SafeAction`, which throws a clear exception if the URL is null (and tells you exactly which controller/action failed). If this was there, there is no more wondering why your link silently broke.
+
+```csharp showLineNumbers title="SafeUrlHelperExtensions.cs"
+var url = Url.SafeAction("ErrorTimeseriesPartial", "CrashReporting");
+
+public static string SafeAction(this IUrlHelper helper, string? action, string? controller, object? values)
+{
+    ArgumentNullException.ThrowIfNull(helper);
+
+    var url = helper.Action(action, controller, values);
+    if (url is not null)
+        return url;
+
+    var actionName = action ?? "<null>";
+    var controllerName = controller ?? "<null>";
+    throw new InvalidOperationException($"Failed to generate URL for action '{actionName}' on controller '{controllerName}'.");
+}
+```
+
+This helper has already saved me from a few bugs. The only downside is losing IntelliSense “Go to definition” on the link helper, but maybe a Roslyn analyzer or VS extension could bridge that. I'm welcome to any ideas here as I'd love to use it more.
+
+If you want to try out `Url.SafeAction`, you can grab the [Gist here](https://gist.github.com/ProRedCat/bd579e7fe8471dfa184bd0cd1b8b144e).
+
+---
+
+## Embracing complexity (just a little) — Vue after HTMX
+
+Peeking behind the curtain, I took about a month and a half off from writing this blog. During that break, a few of my opinions shifted as I explored new technologies and ran into a handful of headaches. The “Beyond the defaults” section and this one were both drafted in that fresh writing session.
+
+With my views updated, I wanted to use this section to chat about Vue and where HTMX falls short.
+
+---
+
+I’ve been using HTMX a lot at work — specifically on **Autohive**, a new initiative we’re building alongside Raygun. It’s a technically ambitious platform focused on enabling collaboration between AI agents and people. We’ve used HTMX for the whole application and it’s worked really well so far. It's quick to ship, easy to understand — but working with it day to day has also surfaced a few interesting limitations. Not dealbreakers, just areas where things start to feel a little awkward or brittle as complexity grows. That’s what led me to explore other options like Vue, and rethink where HTMX fits best in my own projects.
+
+One issue is convention over configuration. Not everyone has developed an intuition for how to use HTMX, which leads to some arguably incorrect usage. For example, where a smart design of HTML with HTMX sprinkled in could have sufficed, sometimes people reach straight for JavaScript—especially inline `<script>` tags. This increases the maintenance burden in areas where it isn’t required.
+
+Sometimes, though, HTMX just does not suffice. One great YouTube video that goes over this is by Theo Browne, called [The Truth About HTMX](https://youtu.be/NA5Fcgs_viU).
+
+The main crux of his argument is that while we can do a lot with HTMX, its range of interactivity is inherently limited since we don’t have client‑side stores or reactive components.
+
+<div className="w-full flex flex-col justify-center items-center">
+    <Image src="/blog/htmx-hypermedia-dotnet/theo-t3-htmx-react.png" width={480} height={0} alt="Theo Browne video screenshot" />
+    <p>Source: The Truth About HTMX — Theo Browne</p>
+</div>
+
+In Theo’s video, he created a graph to illustrate that point: HTMX can take you far, but React and other frameworks can take you further. That’s exactly what I’ve run into. I can still create amazing UIs, but I’m definitely limited in terms of interactivity, and sometimes it can get quite messy.
+
+For example, if we want a value to change in real time in two places (without requesting a partial **every** time), we have to use `document.querySelector` everywhere. This gets messy **very** quickly, and you’ll often find yourself running into null references because some HTML wasn’t there when you expected it to be.
+
+In a frontend framework such as Vue, you could have a Pinia store to manage shared state across your application: change one value, and it’s reflected everywhere at once without worrying about manual updates.
+
+---
+
+During my break, I started experimenting with `Vue.js` in a personal project I’ll be announcing soon. Transitioning to Vue after encountering HTMX’s limitations has been a real breath of fresh air.
+
+What I like most about Vue is that it’s not a “full‑fat” framework. It addresses a lot of pain points—like shared state via Pinia—while remaining quite “low level” in how you write the UI.
+
+You have a `<template>` for your HTML, a `<script>` that runs on component load (glossing a bit here), and a `<style>` for CSS (though I use Tailwind instead). With both component‑level and shared state, this setup solves many of the issues I have with HTMX.
+
+One thought I do have is that even though frameworks like Vue solve many interactivity issues, the broader challenge of convention over configuration never really disappears. Every team brings different habits, preferences, and trade-offs into their work, whether they’re writing vanilla HTML or composing Vue components. In that sense, the real learning is not just in picking the right tool, but in learning to work within and around its constraints - something I’ve had to do with both HTMX and Vue.
+
+---
+
+## Closing thoughts
+Stepping back, this detour into Vue reminded me why I love tackling engineering challenges across domains and choosing the right tool for each problem. HTMX delivered raw speed; Vue added clear structure. Together, they’ve made me a more versatile engineer.
+
+I would definitely still reach for HTMX in a heartbeat, but I'm also really interested to learn more about Vue. If there are any takeaways from this blog, the main one is just give HTMX a try, you may love it, you may hate it, but I definitely love it.
+
+
+## …but what’s next?
+After spending all this time simplifying the frontend, I started thinking about my own browsing experience.
+
+I’ve nearly tried more browsers than HTMX has swap modes — from Chrome to Opera GX, back to Chrome (classic), then over to Arc, Zen, and now… Dia. I keep telling myself I’ve found *the* one, but the tabs keep opening — both literally and metaphorically.
+
+So if you’ve ever installed a new browser just because the tab animation felt ✨vibey✨, or spent an hour customizing the sidebar before opening a single site, you might enjoy my next post:
+
+“Just one more browser I swear” - a very personal deep dive into my browser-hopping saga, the pros, the quirks, and why I apparently treat browsers like Pokémon.
+
+Stay tuned - and no, I don’t need an intervention. Yet.
