@@ -21,47 +21,47 @@ export async function generateStaticParams(): Promise<PostPageProps["params"][]>
     return posts.map((post) => ({ slug: post.slugAsParams.split("/") }));
 }
 
-export default async function PostPage({params}: PostPageProps) {
-    const post = await getPostFromParams(params);
-    const resolvedParams = await props.params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }) {
+    const resolvedParams = await params;
     const post = await getPostFromParams(resolvedParams);
 
-    if (!post) {
+    if (!post || !post.published) {
         return {};
     }
 
-    const ogImage = post.hero ? `https://proredcat.com${post.hero}` : 'https://proredcat.com/blog/default-hero-image.JPG';
+    const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
 
     return {
         title: post.title,
         description: post.description,
+        authors: [{ name: "Reilly Oldham" }],
         openGraph: {
             title: post.title,
             description: post.description,
-            type: 'article',
+            type: "article",
             publishedTime: post.date,
-            authors: ['Reilly Oldham'],
-            tags: post.tags,
+            authors: ["Reilly Oldham"],
             images: [
                 {
                     url: ogImage,
                     width: 1200,
                     height: 630,
                     alt: post.title,
-                }
+                },
             ],
         },
         twitter: {
-            card: 'summary_large_image',
+            card: "summary_large_image",
             title: post.title,
             description: post.description,
             images: [ogImage],
+            creator: "@reillyoldham",
         },
     };
 }
 
-export default async function PostPage(props: PostPageProps) {
-    const resolvedParams = await props.params;
+export default async function PostPage({params}: { params: Promise<{ slug: string[] }> }) {
+    const resolvedParams = await params;
     const post = await getPostFromParams(resolvedParams);
 
     // TODO: Create a custom 404 page as the default looks bad
