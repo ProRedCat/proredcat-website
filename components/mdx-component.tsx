@@ -8,7 +8,7 @@ const useMDXComponent = (code: string) => {
 }
 
 const components = {
-    Image,
+    Image: (props: any) => <Image {...props} alt={props.alt || ""} />,
     YouTube
 }
 
