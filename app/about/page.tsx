@@ -14,17 +14,17 @@ export default function AboutPage() {
                     
                     <div className="prose prose-lg text-primary-charcoal">
                         <p className="text-xl mb-6">
-                            👋 This page is currently under construction, but I'm excited to share more about myself soon!
+                            👋 This page is currently under construction, but I&apos;m excited to share more about myself soon!
                         </p>
                         
                         <p className="mb-6">
-                            While you're here, feel free to check out some of my recent projects:
+                            While you&apos;re here, feel free to check out some of my recent projects:
                         </p>
                         
                         <ul className="list-disc ml-6 mb-8 space-y-2">
                             <li><strong>Human Motion Generation Research</strong> - Diffusion-based human motion generation from my honours work at Victoria University</li>
                             <li><strong>Wellington Transport Alexa Skill</strong> - Voice-powered public transport information for Wellington commuters</li>
-                            <li><strong>Minigun</strong> - A modern webapp providing a new UI for Raygun's crash reporting data</li>
+                            <li><strong>Minigun</strong> - A modern webapp providing a new UI for Raygun&apos;s crash reporting data</li>
                             <li><strong>Raygun MCP Server</strong> - One of the first Model Context Protocol servers for AI agents</li>
                         </ul>
                         
