@@ -13,9 +13,11 @@ export default function BlogPage() {
         );
     };
 
+    const publishedPosts = posts.filter(post => post.published);
+    
     const filteredPosts = selectedTags.length > 0
-        ? posts.filter(post => post.tags?.some(tag => selectedTags.includes(tag)))
-        : posts;
+        ? publishedPosts.filter(post => post.tags?.some(tag => selectedTags.includes(tag)))
+        : publishedPosts;
 
     const sortedPosts = [...filteredPosts].sort((a, b) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()

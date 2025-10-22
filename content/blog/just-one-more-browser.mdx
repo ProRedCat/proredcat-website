@@ -1,94 +1,81 @@
 ---
 title: "Just One More Browser I Swear"
-date: 2025-05-22
-description: "A not-so-serious dive into my browser-hopping habits — from Chrome to Arc, Zen, and now Dia. What started as a quest for better UX turned into a pattern of endless switching. This post unpacks what I’ve learned along the way, what each browser did right (or hilariously wrong), and why I treat browsers like they're collectible."
-shortDescription: "One dev’s journey through Chrome, Arc, Zen, and beyond — chasing tabs, features, and the perfect vibe."
+date: 2025-11-24
+description: "A reflection on why browsers matter more than ever, and how Chrome, Arc, Zen, and Dia each shaped my workflow. This post examines what I truly value in a browser, why I switch so often, and where the future of browsing is headed."
+shortDescription: "A look at the browsers that shaped my workflow and where the future of browsing is headed."
 hero: /blog/just-one-more-browser/browser-journey-hero.png
-published: false
+published: true
 tags: ["Browsers", "Developer Tools", "UX", "Personal", "Frontend"]
 ---
 
+This blog began as a reflection on why I frequently switch browsers. While drafting it, the browser landscape shifted rapidly. Atlassian [acquired](https://www.atlassian.com/blog/announcements/atlassian-acquires-the-browser-company) The Browser Company of New York, Firefox finally addressed [long-standing CSS gradient issues](https://www.firefox.com/en-US/firefox/144.0/releasenotes/), and Perplexity even made an “attempt” to [buy Google Chrome](https://www.bbc.com/news/articles/c3dpr0kkyz4o) amidst antitrust lawsuits. By the time I returned from a trip to Europe and got the time to revisit my writing, much of it already felt out of date.
 
-# The tabs made me do it
+That pace of change is exactly why the topic interests me. Browsers have become central productivity tools for myself, not just windows into the web, and the differences between them genuinely affect how I work day to day. In this post, I’ll outline what I look for in a browser, why I move between them so often, and where I think browsers and browser standards are heading from here.
 
-I never meant to become a browser nomad. Most people pick Chrome once and call it a day. For developers, though, the browser isn’t just “where the internet lives” — it’s a core piece of the workflow. The right browser can feel like an extension of your IDE. The wrong one? A constant source of friction.
+## Why browsers matter now more than ever
 
-For me, the cracks first showed up in Chrome. On paper it did everything right — stable, synced across devices, and the de facto default. But small things started to grate. Like watching 1080p60 YouTube at 2× speed and seeing frames drop on a Ryzen laptop that was supposed to be more than capable. Not the end of the world, but enough to ask the dangerous question: could another browser actually do this better?
+Most of the tools I rely on throughout the day now run in a browser; docs, source control, CI dashboards, project boards, chat, analytics, it’s all there. It didn’t happen all at once, but over the last decade more and more of these tools moved into the browser. At some point, it stopped being just one app among many and became the environment everything else passes through.
 
-That was the start of the journey — one hopeful install after another, chasing small wins in speed, tab management, and developer ergonomics. Some stuck for a while, others fell apart quickly. This post is my attempt to unpack that pattern: what each browser got right, where they broke down, and why I keep jumping ship every few months.
+Since the early 2010s, the rapid growth of SaaS has pushed more of our tools into the browser. Figma, Jira, GitHub, and countless others adopted a web-first model, making software available instantly through a browser instead of an install. As that pattern repeated, the browser didn’t just become another app, it became the default gateway for getting work done, particularly in the tech world.
 
-## The browser you already have
+When the browser becomes the place where work happens, it stops being a neutral choice. Decisions in UX, performance, tab management, extensions, and navigation now have a meaningful effect on my day, and likely yours too. When a browser gets those decisions wrong, the pain shows up constantly, not occasionally. You interact with it hundreds of times per day, so small issues compound, but that also makes it one of the biggest levers for improving how you work. A browser can now accelerate your workflow or get in its way.
 
-When I first started using Chrome, I wasn’t a real software engineer yet - just a high school student with a new laptop and way too many YouTube tabs open. Chrome fit that stage of life perfectly: simple, reliable, and the obvious choice everyone around me used.
+AI has the potential to be one of the most disruptive technologies of our time, and the browser is likely to become one of its biggest distribution layers. That dynamic opens the door for both new players like [Dia](https://www.diabrowser.com/) and [ChatGPT Atlas](https://openai.com/index/introducing-chatgpt-atlas/), as well as entrenched incumbents such as Google and Microsoft who already control major entry points. But today’s browser-based AI is still early in the cycle. They’re mostly question-answer copilots sitting beside your tabs, not systems that take meaningful action.
 
-For a while, I didn’t think much about browsers at all. I wasn’t exploring extensions or power features yet. Chrome was just “the place the internet lived.” But over time, cracks started to show. Watching YouTube at 2x speed, something I did constantly, started to feel clunky. Frames would drop for me even on decent hardware. It was a small annoyance, but annoying enough to make me wonder if another browser could do better.
+The real shift will come when AI can act on what’s in the browser, not just talk about it. When that happens, your browser becomes an action environment instead of just a workspace, and the choice you make will matter even more than it does now. AI might reshape the browser in the future, but until that happens, the only thing that really matters is how well a browser supports the workflow I have today. Over time I’ve learned what I actually value in a browser, and that’s where my real journey begins.
 
-## A gamer’s Browser, apparently
+## What I value in a browser
 
-With Chrome dropping frames during something as simple as watching YouTube, I started looking around for alternatives. Around this time OperaGX was everywhere — sponsoring half the YouTubers I followed, with the bold pitch of being “a browser for gamers.” It was the first time I’d seen a browser marketed as anything other than a boring utility, and the idea caught me.
+Over time, after bouncing between browser after browser, I realised I wasn’t switching for novelty or out of boredom. Each change happened for the same underlying reason: something in my workflow felt slower, heavier, or more frustrating than it needed to be. The browser wasn’t just another app, it was the environment I worked inside, and the friction I used to shrug off eventually made my values impossible to ignore. Each browser solved something I cared about and then revealed a flaw I couldn’t live with, so the only way to explain what I value now is to walk through the browsers I tried, why I switched to them, and why I left.
 
-To my surprise, it actually worked. OperaGX fixed the YouTube issue instantly — I could finally watch videos at 2× speed without stutter. It even felt snappier at first: tabs opened quickly, searches felt faster, and for a while I genuinely believed their performance claims.
+### Chrome - the browser you already have
 
-But the honeymoon period didn’t last. The longer I used OperaGX, the slower it got, until I was right back where I started with Chrome — dropped frames, lag, and general clunkiness. On top of that, every update seemed to pile on more unnecessary features: built-in games, sidebars for Instagram, Facebook, Twitter… things I never asked for and could just open in a tab anyway. The browser went from fresh and exciting to bloated and frustrating.
+Like most people, I started on Chrome without thinking about it. It was the default, and at that stage I didn’t have “browser preferences”, I just opened tabs and went about my life. The first change came before university, when my laptop was struggling and YouTube stutter pushed me toward OperaGX. It felt smoother for a short while, but the gimmicks and bloat wore thin fast. Once performance slipped again, I dropped it and returned to Chrome.
 
-So, once again, I got curious — maybe it was time to give Chrome another shot.
+It was only during university, and especially once I began working as a software engineer, that the browser became part of my actual workflow. Chrome was where I first discovered things like tab groups, profiles, and proper sync across devices. That’s when I started realising a browser could support or hinder how I worked, not just display websites. Chrome became my baseline: reliable, simple, and predictable. Eventually, though, that also became the problem. I wanted something more opinionated, something that actually tried to rethink how a browser should work. That curiosity is what led me to Arc.
 
-## Performance, profiles, and pretending it’s new
+### Arc - a reimaging of the browser
 
-Back to Chrome it was. This time, though, it felt different. Suddenly it was the fast browser — tabs opened quickly, YouTube ran smoothly, and startup times were snappy. After OperaGX’s bloated mess, Chrome felt refreshingly simple and intuitive. Maybe that’s what I had been missing all along.
+[Arc](https://arc.net/gift/9233fc50) was the first browser that actually felt *different*. Not incremental, not “Chrome with an opinion,” but a genuine rethink of how working in a browser could feel. The moment I tried vertical tabs and Arc’s take on folders, something clicked. For the first time, managing a lot of open work didn’t feel like juggling, everything lived where it belonged, and switching contexts felt fluid instead of chaotic. Other browsers have attempted vertical tabs, but Arc tied the whole experience together in a way that made it feel natural, not bolted on.
 
-I stuck with Chrome for quite a while, though at first I used it in the same boring way I always had. That changed when I started my first jobs in the software industry. Suddenly my browser wasn’t just for watching YouTube or browsing — it became part of my daily workflow.
+<Image src="/blog/just-one-more-browser/arc-screenshot.png" width={800} height={0} />
 
-The biggest breakthrough was keeping work and personal life separate. Different password managers, extensions, and accounts all had their own space. Chrome handled this brilliantly with profiles, and it was a game-changer. On top of that, tab groups made it possible to corral the chaos: CMS tools in one group, Raygun tabs in another, GitHub in another — all collapsible and easy to manage.
+For a while, it was the most organised I had ever felt in a browser. Workspaces made sense. Pinned tabs actually stayed useful. Arc’s structure didn’t just display my work, it supported it. It was the first time I stopped thinking of a browser as a utility and started seeing it as a real part of my workflow, not just a window to it.
 
-Then came tab sync, which tied it all together. At the time I had three main devices — a home desktop, a work desktop, and a personal laptop. Being able to pick up exactly where I left off, no matter which one I was on, felt seamless. Chrome was no longer just a default browser; it was a productivity tool.
+But the honeymoon didn’t last. On Windows, Arc always felt a step behind. Features landed slower, polish lagged the macOS version, and over time performance issues crept in. The momentum that made Arc exciting in the first place started to fade, and I found myself fighting friction again, only this time it stung more, because I had seen how good it *could* be. Eventually, I moved on. It wasn’t because the core ideas failed, but because the execution couldn’t consistently keep up with them.
 
-Looking back, this is where things escalated. Once I saw how much a browser could streamline my workflow, I started chasing that feeling everywhere. Chrome was good — really good — but I couldn’t help wondering if something else out there might be even better. That’s when I found my next favorite browser.
+Still, Arc changed my expectations of what a browser could be, and that stuck with me. Even after I left, I found myself chasing that same feeling, looking for a browser that had Arc’s ambition, without the trade-offs that pushed me away.
 
-## Built for the few, not the funnel
+### Zen: promise without polish
 
+After leaving Arc, [Zen](https://zen-browser.app/) was the first browser that genuinely caught my attention. It felt like a spiritual successor–lean, minimal, and built by people who clearly understood why Arc resonated with power users. And being open source, it carried a different kind of promise: a browser shaped by community needs rather than VC pressure. On paper, it was everything I wanted—Arc’s soul, without Arc’s baggage.
 
+<Image src="/blog/just-one-more-browser/zen-screenshot.png" width={800} height={0} />
 
-- Heard a lot about the browser in the developer community
-- Got beta access for the Windows beta as I wasn't on MacOS
-- Was really good, bit rough at the start but the vertical tabs were amazing
-- Pinned tab groups were great
-- Arc sync was great
-- Live folders were amazing as a developer as I could immediately know when I was needed for review
-- Different workspaces worked as well
-- Essential tabs were good
-- Popout window for videos was so helpful
-- Tried out the MacOS version on a work MacBook as I was doing a lot of development for iOS there
-- So much better than Windows so I got a bit disillusioned as I wanted the features MacOS had
-- The Browser Company decides to stop development of Arc and build Arc 2.0 (which was supposed to be built on Arc but never came)
-- Again the browser began to feel slow
-- I do a lot of local development, so I'd paste in localhost:6001 into the new tab menu, but it just became too slow
-- I would do new tab and enter before it registers it's a link so I would end up Googling local host again and again
+But the reality didn’t hold up in day-to-day use. Zen had the *idea* of Arc’s workflow, but not the *execution*. Firefox’s engine brought constant rough edges for developer workflows, sync across devices was weak, and over time performance on Windows began to regress in familiar ways—even after clean reinstalls. The biggest surprise was the lack of DRM support, which meant no Netflix or Disney+. For a long stretch they didn’t plan to support it at all, which made Zen feel principled in a way that clashed with practicality. In the end, Zen’s vision pulled me in, but its limitations pushed me out.
 
+Zen taught me a clear lesson: **understanding the problem isn’t enough—polish, performance, and platform maturity matter just as much as philosophy.** I wanted something Arc-like, but I needed it to actually hold up under a real workload.
 
-## Arc’s soul, Firefox’s baggage
-- A firefox open-source browser
-- Vertical tabs
-- Essential tabs
-- Basically Arc but Firefox
-- Main issue is it feels unpolished
-- Firefox containers are not as good as Chrome workspaces
-- Plugins persist across all workspaces, which is annoying for a personal and work one
-- Tab sync was worse than Arc
-- I like it, I like the direction, but I want a very polished experience, like Arc but being supported
+### Dia: Arc's ideas, missing Arc's soul
 
-## Beautiful, but it’s not Arc
-- This is what Arc was abandoned for
-- Got Alpha access, and now that I'm on a MacOS laptop for work I was able to use it
-- It feels really nice
-- Didn't have vertical tabs
-- Workspaces are good but the switcher at the moment is annoying as it makes multiple tabs
-- The inbuilt AI chat is pretty nice, mentioning tabs is veyr useful - especially for sites that don't let robots read them
-- Just really miss my vertical tabs
-- Good news is that they are bringing some more features from Arc over, so hopefully we get something similar to Arc
-- E.g. tab sync, optional vertical tabs, live folders
+Where Zen felt spiritual, Dia felt direct. It carried the unmistakable influence of Arc’s workflow concepts, and initially it seemed like it might deliver the structure and ambition I had been missing. Of all the AI-enabled browsers, Dia has taken the most credible swing at integrating AI in a way that respects actual work, not just novelty. My first impression was hopeful: maybe this was Arc’s vision, reborn with momentum.
 
-## Where am I going next
-- Will continue with Dia for a bit, but I do long for my vertical tabs
-- Maybe I'll switch back to Arc for a bit, as it is better on MacOS but my home computer is still Windows
-- Does anyone have any browser suggestions I should try?
+<Image src="/blog/just-one-more-browser/dia-screenshot.png" width={800} height={0} />
+
+But the more I used it, the clearer the gap became. Even though vertical tabs eventually landed, they didn’t *feel* like Arc’s, they were just tabs turned sideways. The fluidity was gone, along with the sense of spatial organisation that originally hooked me. Other pieces were missing or less refined, and while Dia is polished, it still isn’t close to the clarity and UX cohesion Arc once had. And with the Atlassian acquisition, it’s no longer clear whether Dia will continue down the same path, or shift toward a very different set of priorities.
+
+Dia ultimately reinforced the point that **AI alone isn’t a reason to switch browsers.** It has potential, but potential without the right opinionated design still misses what made Arc special. So I moved on once again, still chasing the browser that could finally deliver both vision and execution.
+
+After all the switching, what I care about has turned out to be surprisingly simple: a browser that helps me stay organised, keeps context clear, and disappears into the flow of work. Fluid tabs, clean structure, and effortless performance aren’t luxuries, they’re the whole point.
+
+### Where I am today
+
+Right now, Arc is the browser that fits me best, especially now that I work on macOS. I didn’t spend most of this journey on a Mac, but with my work setup there today, Arc finally delivers the experience I always wanted from it. The polish is there, the performance is smooth, and the workflow-first philosophy that hooked me in the first place actually holds up day to day. At home I’m still on Windows, and while Arc isn’t as refined there, I’m willing to tolerate the rough edges because I’ve seen how good it can feel on hardware and an OS it’s clearly built around.
+
+The core strengths haven’t changed. Arc’s spatial approach to organising work, especially through vertical tabs and structured navigation, is still unmatched. The difference now is that I’m no longer fighting missing features, lagging parity, or half-shipped ideas. On macOS, Arc supports my momentum instead of interrupting it, and at this point in my workflow that matters more than any novelty a different browser could offer.
+
+I’m not treating this as “the end of the journey,” and I’m not loyal to Arc in a permanent sense. But I’m also not switching for curiosity alone anymore. If I move again, it’ll be because something clearly supports how I think and work—better than what I have today. For now, Arc does that, and that’s enough.
+
+### Closing thoughts
+
+Browsers are personal tools. For some, they’re just a window to the web; for me, they’ve become part of my workflow itself. I don’t think I’ve found the perfect browser yet, but I have found clarity on what I value, and that matters more than the switching. Whether the future comes from steady refinement or a bold reimagining, I’m optimistic. The browser still has room to grow.
