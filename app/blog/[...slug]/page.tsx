@@ -30,15 +30,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+    const canonicalUrl = `https://www.proredcat.xyz${post.slug}`;
 
     return {
         title: post.title,
         description: post.description,
         authors: [{ name: "Reilly Oldham" }],
+        alternates: {
+            canonical: canonicalUrl,
+        },
         openGraph: {
             title: post.title,
             description: post.description,
             type: "article",
+            url: canonicalUrl,
+            siteName: "Reilly Oldham",
             publishedTime: post.date,
             authors: ["Reilly Oldham"],
             images: [
