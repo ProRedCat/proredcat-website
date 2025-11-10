@@ -3,6 +3,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
     title: "About Me - Reilly Oldham",
     description: "Learn more about Reilly Oldham - software engineer, backend specialist, and full-stack developer.",
+    alternates: {
+        canonical: "https://www.proredcat.xyz/about",
+    },
 };
 
 export default function AboutPage() {
