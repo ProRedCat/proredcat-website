@@ -60,7 +60,7 @@ But it does not return cache write tokens, the one value Anthropic charges extra
 
 Without that number, we can’t compute the cost ourselves. We could ignore it or guess based on heuristics, but neither is acceptable for a usage-based billing platform.
 
-Here’s the important twist, OpenRouter does return the final cost in USD (via `include_usage: true`). So although we can’t compute the cost straight away, we can work backwards from the cost and solve for the one missing variable.
+Here’s the important twist, OpenRouter does return the final cost in USD (via `usage: {include: true}`). So although we can’t compute the cost straight away, we can work backwards from the cost and solve for the one missing variable.
 
 Since cache writes are the only unknown in the cost equation, we can simply derive them algebraically.
 
@@ -73,7 +73,15 @@ Since OpenRouter returns the total cost and every other token component, cache w
 Which gives us this monster of an equation:
 
 $$
-W= \frac{  \text{Cost}_{\text{USD}} \cdot 10^{6}  - T_{p} \, P_{\text{base}}  - C \left( P_{\text{read}} - P_{\text{base}} \right)  - T_{c} \, P_{\text{out}}}{  P_{\text{write}} - P_{\text{base}}}
+W =
+\frac{
+\text{Cost}_{\text{USD}} \cdot 10^{6}
+- T_{\text{in}}\, P_{\text{in}}
+- T_{\text{read}}\, (P_{\text{read}} - P_{\text{in}})
+- T_{\text{out}}\, P_{\text{out}}
+}{
+P_{\text{write}} - P_{\text{in}}
+}
 $$
 
 Multiplying $\text{Cost}_{\text{USD}}$ by one million simply normalises it to match our pricing units, since all $P$ values are stored as “price per 1M tokens.” The numerator subtracts the cost contribution of every known component (input, output, and cache reads), leaving only the portion of the cost attributable to cache writes. The denominator represents the marginal price of a cache write token.
