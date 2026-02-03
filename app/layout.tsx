@@ -5,6 +5,7 @@ import {Header} from "@/components/header";
 import {cn} from "@/lib/utils";
 import {SpeedInsights} from "@vercel/speed-insights/next";
 import {Analytics} from "@vercel/analytics/react";
+import {getPersonJsonLd, getWebsiteJsonLd} from "@/lib/jsonld";
 
 export const metadata: Metadata = {
     title: "Reilly Oldham",
@@ -65,6 +66,16 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" className="scroll-pt-[4rem]">
+        <head>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: JSON.stringify(getPersonJsonLd())}}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: JSON.stringify(getWebsiteJsonLd())}}
+            />
+        </head>
         <body className={cn("min-h-screen container mx-auto max-w-screen-2xl", "p-4 pt-0")}>
         <Header/>
         <Analytics/>
