@@ -12,6 +12,10 @@ tags:
   - LLM
 ---
 
+<UpdateCallout date="January 2026">
+OpenRouter now natively returns cache write tokens in the response. The `include_usage: true` parameter is no longer supported as the full usage object is always returned. This change was released sometime between December 15th 2025 and January 30th 2026.
+</UpdateCallout>
+
 Prompt caching is one of the biggest cost-savers when running LLMs, especially for agents. Without caching, each new message requires the model to re-ingest the entire conversation history. As your context grows, every request bills for the entire history, making it dramatically more expensive.
 
 ### Prompt caching and Anthropic’s approach
