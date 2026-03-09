@@ -1,28 +1,20 @@
+import { type ReactNode } from "react";
+
 interface UpdateCalloutProps {
     date: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 export default function UpdateCallout({ date, children }: UpdateCalloutProps) {
     return (
-        <div className="my-6 rounded-lg border-l-4 border-orange-400 bg-orange-50 p-4">
-            <div className="flex items-center gap-2 mb-2">
-                <svg
-                    className="h-5 w-5 text-orange-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                </svg>
-                <span className="font-semibold text-orange-700">Update — {date}</span>
+        <aside className="not-prose my-8 rounded-lg border border-primary-navy-dark/20 bg-primary-navy-dark/5 p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-primary-navy-dark">
+                <span className="text-sm font-semibold uppercase tracking-[0.08em]">Update</span>
+                <span className="text-sm opacity-80">{date}</span>
             </div>
-            <div className="text-orange-900 prose-sm">{children}</div>
-        </div>
+            <div className="text-[0.96rem] leading-7 text-primary-navy-dark/90 [&_a]:font-medium [&_a]:text-primary-navy-dark [&_a]:underline [&_a]:underline-offset-2 [&_code]:rounded-sm [&_code]:bg-primary-cream [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.9em] [&_ol]:my-3 [&_p]:m-0 [&_p+p]:mt-3 [&_ul]:my-3">
+                {children}
+            </div>
+        </aside>
     );
 }
