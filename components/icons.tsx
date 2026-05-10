@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type IconProps = React.HTMLAttributes<SVGElement>;
 
 export const Icons = {

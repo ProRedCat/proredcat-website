@@ -7,19 +7,15 @@ import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
 import {getArticleJsonLd} from "@/lib/jsonld";
 
-interface PostPageProps {
-    params: Promise<{
-        slug: string[];
-    }>;
-}
-
 async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
     return posts.find(post => post.slugAsParams === slug);
 }
 
 export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
-    return posts.map((post) => ({ slug: post.slugAsParams.split("/") }));
+    return posts
+        .filter((post) => post.published)
+        .map((post) => ({ slug: post.slugAsParams.split("/") }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }) {
@@ -31,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
-    const canonicalUrl = `https://www.proredcat.xyz${post.slug}`;
+    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
 
     return {
         title: post.title,
@@ -76,7 +72,7 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
         notFound();
     }
 
-    const canonicalUrl = `https://www.proredcat.xyz${post.slug}`;
+    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
     const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
     
     const articleJsonLd = getArticleJsonLd({

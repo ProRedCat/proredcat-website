@@ -29,7 +29,7 @@ export default function Home() {
                     width={400}
                     height={400}
                     className="w-full h-auto rounded-2xl"
-                    priority
+                    preload
                 />
             </div>
         </div>

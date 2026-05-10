@@ -15,7 +15,6 @@ export default function HumanMotionDiffusion() {
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     className="object-cover rounded-t-lg"
-                    priority={true}
                     unoptimized
                 />
             </div>

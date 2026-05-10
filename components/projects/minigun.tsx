@@ -15,7 +15,6 @@ export default function MinigunProject() {
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     className="object-contain rounded-t-lg p-2"
-                    priority={true}
                 />
             </div>
             

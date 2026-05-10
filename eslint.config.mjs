@@ -1,5 +1,17 @@
-import nextConfig from 'eslint-config-next';
+import coreWebVitals from 'eslint-config-next/core-web-vitals';
+import typescriptConfig from 'eslint-config-next/typescript';
 
-const config = [...nextConfig];
+const config = [
+    ...coreWebVitals,
+    ...typescriptConfig,
+    {
+        ignores: [
+            '.next/**',
+            '.velite/**',
+            'node_modules/**',
+            'public/static/**',
+        ],
+    },
+];
 
 export default config;

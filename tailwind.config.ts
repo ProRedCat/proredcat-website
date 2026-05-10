@@ -1,9 +1,9 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
 
 
 const config: Config = {
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./content/**/*.{js,ts,jsx,tsx,mdx}"
@@ -11,11 +11,14 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Space Grotesk', 'sans-serif'],
+        sans: ['var(--font-space-grotesk)', 'sans-serif'],
       },
       colors: {
+        'foreground': '#001A4D',
         'primary-cream': '#FFFDE7',
         'primary-navy-dark': '#001A4D',
+        'primary-charcoal': '#001A4D',
+        'primary-teal': '#003D39',
         'primary-green-light': '#D8FFE7',
         'primary-green-dark': '#003E19',
         'primary-blue-light': '#D8FFFD',
@@ -23,7 +26,7 @@ const config: Config = {
         'red-secondary': '#FF0000',
         'orange-secondary': '#FF0000',
       },
-      // @ts-ignore
+      // @ts-expect-error - typography theme function types are not exported
       typography: (theme) => ({
         DEFAULT: {
           css: {
@@ -48,7 +51,7 @@ const config: Config = {
       }),
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [typography],
 };
 
 export default config;

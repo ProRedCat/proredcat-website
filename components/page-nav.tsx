@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
-import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 export function PageNav() {
-    const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
     };
+
+    const desktopLinkClass = "text-xl font-medium transition-colors hover:text-primary-navy-dark text-foreground pb-2 pt-2";
+    const mobileLinkClass = "text-2xl font-medium text-foreground";
 
     return (
         <nav className="flex items-center">
@@ -22,31 +23,13 @@ export function PageNav() {
             
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6 ml-6">
-                <Link
-                    href="/projects"
-                    className={cn(
-                        "text-xl font-medium transition-colors hover:text-primary relative pb-2 pt-2",
-                        pathname === "/projects" ? "text-foreground" : "text-foreground/60"
-                    )}
-                >
+                <Link href="/projects" className={desktopLinkClass}>
                     Projects
                 </Link>
-                <Link
-                    href="/about"
-                    className={cn(
-                        "text-xl font-medium transition-colors hover:text-primary relative pb-2 pt-2",
-                        pathname === "/about" ? "text-foreground" : "text-foreground/60"
-                    )}
-                >
+                <Link href="/about" className={desktopLinkClass}>
                     About
                 </Link>
-                <Link
-                    href="/blog"
-                    className={cn(
-                        "text-xl font-medium transition-colors hover:text-primary relative pb-2 pt-2",
-                        pathname === "/blog" ? "text-foreground" : "text-foreground/60"
-                    )}
-                >
+                <Link href="/blog" className={desktopLinkClass}>
                     Blog
                 </Link>
             </div>
@@ -91,44 +74,16 @@ export function PageNav() {
                 </button>
 
                 <div className="flex flex-col items-center justify-center h-full space-y-8">
-                    <Link
-                        href="/"
-                        className={cn(
-                            "text-2xl font-medium",
-                            pathname === "/" ? "text-foreground" : "text-foreground/60"
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/" className={mobileLinkClass} onClick={() => setIsMenuOpen(false)}>
                         Home
                     </Link>
-                    <Link
-                        href="/projects"
-                        className={cn(
-                            "text-2xl font-medium",
-                            pathname === "/projects" ? "text-foreground" : "text-foreground/60"
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/projects" className={mobileLinkClass} onClick={() => setIsMenuOpen(false)}>
                         Projects
                     </Link>
-                    <Link
-                        href="/about"
-                        className={cn(
-                            "text-2xl font-medium",
-                            pathname === "/about" ? "text-foreground" : "text-foreground/60"
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/about" className={mobileLinkClass} onClick={() => setIsMenuOpen(false)}>
                         About
                     </Link>
-                    <Link
-                        href="/blog"
-                        className={cn(
-                            "text-2xl font-medium",
-                            pathname === "/blog" ? "text-foreground" : "text-foreground/60"
-                        )}
-                        onClick={() => setIsMenuOpen(false)}
-                    >
+                    <Link href="/blog" className={mobileLinkClass} onClick={() => setIsMenuOpen(false)}>
                         Blog
                     </Link>
                 </div>
