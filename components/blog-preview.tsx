@@ -20,6 +20,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                         src={post.hero || DEFAULT_HERO_IMAGE}
                                         alt={post.title}
                                         fill
+                                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                                         placeholder={post?.blurHash ? "blur" : "empty"}
                                         blurDataURL={post?.blurHash}
                                         className="object-cover rounded-t-lg"

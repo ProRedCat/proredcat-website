@@ -13,6 +13,7 @@ export default function RaygunMCPProject() {
                     src="/projects/raygun-mcp/mcp-feature-image.webp"
                     alt="Raygun MCP Server Architecture"
                     fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     className="object-contain rounded-t-lg p-2"
                     priority={true}
                 />

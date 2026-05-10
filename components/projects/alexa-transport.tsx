@@ -13,6 +13,7 @@ export default function AlexaTransportProject() {
                     src="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
                     alt="Alexa Skill hero image"
                     fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     className="object-cover rounded-t-lg"
                     priority={true}
                 />

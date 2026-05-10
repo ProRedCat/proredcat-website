@@ -13,8 +13,10 @@ export default function HumanMotionDiffusion() {
                     src="/projects/human-motion/man-running.gif"
                     alt="Stick figure running"
                     fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                     className="object-cover rounded-t-lg"
                     priority={true}
+                    unoptimized
                 />
             </div>
             
