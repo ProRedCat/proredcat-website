@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         siteName: "Reilly Oldham",
         images: [
             {
-                url: "/blog/default-hero-image.JPG",
+                url: "/og-image.png",
                 width: 1200,
                 height: 630,
                 alt: "Reilly Oldham - Software Engineer",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Reilly Oldham - Software Engineer",
         description: "Software engineer specializing in backend and full-stack development. Building scalable systems, optimizing performance, and crafting developer tools.",
-        images: ["/blog/default-hero-image.JPG"],
+        images: ["/og-image.png"],
         creator: "@proredcat",
     },
     robots: {
