@@ -22,13 +22,14 @@ export default function Home() {
                     </Link>
                 </div>
             </div>
-            <div className="flex justify-center items-center w-48 md:w-auto">
+            <div className="flex justify-center items-center shrink-0 w-48 h-48 md:w-96 md:h-96">
                 <Image
                     src="/Reilly-Blue-BackG Cropped.png"
                     alt="Reilly with blue background"
                     width={400}
                     height={400}
-                    className="w-full h-auto rounded-2xl"
+                    sizes="(min-width: 768px) 384px, 192px"
+                    className="w-full h-full rounded-2xl object-cover"
                     preload
                 />
             </div>
