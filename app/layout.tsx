@@ -1,9 +1,19 @@
 import type {Metadata} from "next";
+import {Space_Grotesk} from "next/font/google";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 import {Header} from "@/components/header";
 import {cn} from "@/lib/utils";
 import {SpeedInsights} from "@vercel/speed-insights/next";
 import {Analytics} from "@vercel/analytics/react";
+import {getPersonJsonLd, getWebsiteJsonLd} from "@/lib/jsonld";
+
+const spaceGrotesk = Space_Grotesk({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700"],
+    display: "swap",
+    variable: "--font-space-grotesk",
+});
 
 export const metadata: Metadata = {
     title: "Reilly Oldham",
@@ -27,7 +37,7 @@ export const metadata: Metadata = {
         siteName: "Reilly Oldham",
         images: [
             {
-                url: "/og-image.jpg",
+                url: "/blog/default-hero-image.JPG",
                 width: 1200,
                 height: 630,
                 alt: "Reilly Oldham - Software Engineer",
@@ -38,7 +48,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Reilly Oldham - Software Engineer",
         description: "Software engineer specializing in backend and full-stack development. Building scalable systems, optimizing performance, and crafting developer tools.",
-        images: ["/og-image.jpg"],
+        images: ["/blog/default-hero-image.JPG"],
         creator: "@proredcat",
     },
     robots: {
@@ -63,7 +73,17 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className="scroll-pt-[4rem]">
+        <html lang="en" className={cn("scroll-pt-[4rem]", spaceGrotesk.variable)}>
+        <head>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: JSON.stringify(getPersonJsonLd())}}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: JSON.stringify(getWebsiteJsonLd())}}
+            />
+        </head>
         <body className={cn("min-h-screen container mx-auto max-w-screen-2xl", "p-4 pt-0")}>
         <Header/>
         <Analytics/>

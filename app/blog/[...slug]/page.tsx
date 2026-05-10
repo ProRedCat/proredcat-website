@@ -5,12 +5,7 @@ import {MDXContent} from "@/components/mdx-component";
 import "@/styles/mdx.css";
 import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
-
-interface PostPageProps {
-    params: Promise<{
-        slug: string[];
-    }>;
-}
+import {getArticleJsonLd} from "@/lib/jsonld";
 
 async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
@@ -18,7 +13,9 @@ async function getPostFromParams(params: { slug: string[] }) {
 }
 
 export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
-    return posts.map((post) => ({ slug: post.slugAsParams.split("/") }));
+    return posts
+        .filter((post) => post.published)
+        .map((post) => ({ slug: post.slugAsParams.split("/") }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }) {
@@ -30,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
-    const canonicalUrl = `https://www.proredcat.xyz${post.slug}`;
+    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
 
     return {
         title: post.title,
@@ -75,10 +72,23 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
         notFound();
     }
 
-    // console.log(post)
+    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
+    const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+    
+    const articleJsonLd = getArticleJsonLd({
+        title: post.title,
+        description: post.description,
+        datePublished: post.date,
+        url: canonicalUrl,
+        image: ogImage,
+    });
 
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: JSON.stringify(articleJsonLd)}}
+            />
             <article className="container pt-[15vh] prose w-full mx-auto">
                 <h1 className="mb-2">{post.title}</h1>
                 <div className="mb-4">
