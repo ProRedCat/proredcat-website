@@ -36,7 +36,7 @@ export default function AboutPage() {
                         </p>
                         
                         <p>
-                            Want to see more of my work? Check out my <a href="https://github.com/ReillyBrogan" target="_blank" rel="noopener noreferrer" className="text-primary-teal underline hover:no-underline">GitHub profile</a> for additional projects and contributions.
+                            Want to see more of my work? Check out my <a href="https://github.com/ProRedCat" target="_blank" rel="noopener noreferrer" className="text-primary-teal underline hover:no-underline">GitHub profile</a> for additional projects and contributions.
                         </p>
                     </div>
                 </div>
