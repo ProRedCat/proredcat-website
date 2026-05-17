@@ -14,7 +14,7 @@ async function getBlurDataURL(hero?: string) {
     const imagePath = path.join(process.cwd(), "public", publicImagePath);
 
     const buffer = await sharp(imagePath)
-        .resize(16, 16, {fit: "inside"})
+        .resize(16, 9, {fit: "cover"})
         .webp({quality: 35})
         .toBuffer();
 
