@@ -21,8 +21,8 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                         alt={post.title}
                                         fill
                                         sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                                        placeholder={post?.blurHash ? "blur" : "empty"}
-                                        blurDataURL={post?.blurHash}
+                                        placeholder={post?.blurDataURL ? "blur" : "empty"}
+                                        blurDataURL={post?.blurDataURL}
                                         className="object-cover rounded-t-lg"
                                     />
                                 </div>

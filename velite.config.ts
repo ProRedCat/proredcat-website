@@ -1,3 +1,5 @@
+import path from "node:path";
+import sharp from "sharp";
 import {defineCollection, defineConfig, s} from 'velite'
 import rehypeSlug from "rehype-slug";
 import rehypePrettyCode from "rehype-pretty-code";
@@ -5,10 +7,25 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 
-const computedFields = <T extends { slug: string }>(data: T) => {
+const DEFAULT_HERO_IMAGE = "/blog/default-hero-image.JPG";
+
+async function getBlurDataURL(hero?: string) {
+    const publicImagePath = (hero || DEFAULT_HERO_IMAGE).replace(/^\/+/, "");
+    const imagePath = path.join(process.cwd(), "public", publicImagePath);
+
+    const buffer = await sharp(imagePath)
+        .resize(16, 16, {fit: "inside"})
+        .webp({quality: 35})
+        .toBuffer();
+
+    return `data:image/webp;base64,${buffer.toString("base64")}`;
+}
+
+const computedFields = async <T extends { slug: string; hero?: string }>(data: T) => {
     return ({
         ...data,
-        slugAsParams: data.slug.split("/").slice(1).join("/")
+        slugAsParams: data.slug.split("/").slice(1).join("/"),
+        blurDataURL: await getBlurDataURL(data.hero)
     });
 }
 
@@ -23,7 +40,6 @@ const posts = defineCollection({
             shortDescription: s.string().max(999),
             date: s.isodate(),
             hero: s.string().max(999).optional(),
-            blurHash: s.string().optional(),
             published: s.boolean().default(true),
             tags: s.array(s.string()).optional(),
             body: s.mdx()
