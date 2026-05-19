@@ -1,0 +1,141 @@
+---
+title: "Catchy for Wear OS, bridging TWAs and the Wearable Data Layer"
+date: 2026-05-20
+description: This blog covers building a Wear OS companion app for Catchy, Wellington's best public transport app. It explores the Wearable Data Layer API for syncing user state to the watch, and the unexpected challenge of bridging a Trusted Web Activity to native Android code.
+shortDescription: A technical look at building the Catchy Wear OS companion app for Wellington's best public transport app.
+hero: /blog/catchy-wearos-wearable-data-layer/catchy-wearos-hero.png
+published: true
+tags: ["Wear OS", "Kotlin", "Project", "Technical"]
+---
+
+# Catchy for Wear OS is out!
+
+Over the past few months I've been working on a Wear OS companion app for [Catchy](https://catchy.nz), Wellington's best public transport app. A huge thanks to David Buck for letting me contribute and for the product feedback throughout.
+
+The watch app gives you Catchy at a glance, your saved stops right on your wrist, with your closest stops right at the top of the list.
+Tap into any stop and your filters are already there, the services, directions, and destinations you've set in the Android app carry straight over with the same Catchy feel.
+Canceled services, bus replacements, and live timing are all there too. Everything syncs over from the Android app, so there's no configuration required.
+
+To get started, grab the app from the Play Store, your favourites will sync over from the Android app automatically.
+
+## Wearable Data Layer
+
+The key piece to get right in the watch app is ensuring that the watch always reflects what you've set up in the Android app, that being your stops, your filters, your preferences.
+By design the watch has no way to set any of this itself, so the question becomes: how do you guarantee that state makes it to the watch, and what happens when it doesn't?
+
+### Initial exploration with MessageClient
+
+MessageClient was the first thing I reached for. Early on I had the idea that there might be some bidirectional communication between the phone and watch, with the watch asking for state and then the phone responding. MessageClient seemed like a natural fit for that model.
+
+It works by fetching the connected nodes in the Wear network and broadcasting a message to each one:
+
+```kotlin
+val payload = stateJson.toByteArray(Charsets.UTF_8)
+
+val nodes = Wearable.getNodeClient(context).connectedNodes.await()
+
+nodes.forEach { node ->
+    Wearable.getMessageClient(context).sendMessage(
+        node.id,
+        STATE_PATH,
+        payload,
+    ).await()
+}
+```
+
+On the watch side, you register an `OnMessageReceivedListener` to handle incoming messages:
+
+```kotlin
+class CatchyStateMessageListener : MessageClient.OnMessageReceivedListener {
+    override fun onMessageReceived(event: MessageEvent) {
+        if (event.path != "/catchy/state") return
+
+        val stateJson = String(event.data, Charsets.UTF_8)
+
+        // Parse and persist the received Catchy state.
+    }
+}
+```
+
+The problem is that MessageClient is fire-and-forget. If the watch is off, out of range, or the app is asleep when the message is sent, you miss it. Coming back to my requirements, MessageClient wasn't quite what I needed. I could have modified it to fit, but there was a better approach waiting.
+
+### Beyond Fire and Forget
+
+From the wearable data layer there are a few other clients and methods of sending data from the phone to the watch and vice versa.
+
+Once I ran into this issue of being more resilient I went back to the drawing board and took a look at what other options there were, though I almost hand rolled my own solution before I found what I was looking for.
+
+Here's a table I've assembled that breaks down each client with how it works and what does it support in terms of features:
+
+| Client            | How it works                                      | Supports > 100KB? | Survives Disconnection? |
+|-------------------|---------------------------------------------------|-------------------|-------------------------|
+| **DataClient**    | Syncs a persistent key-value store across devices | Yes (via `Asset`) | Yes                     |
+| **MessageClient** | Fire-and-forget message to a connected node       | No                | No                      |
+| **ChannelClient** | Bidirectional stream between two connected nodes  | Yes               | No                      |
+
+Based on my requirements, `DataClient` appeared to be the best option for me, but the other options have their use cases in other projects, especially for file transfers or larger syncs.
+
+### Persistent State Sync with DataClient
+
+The design an implementation of `DataClient` was quite simple, and just by using it you get a lot of nice features for free.
+
+Within the mobile app all you have to do to send some data over the data client is create a put map request, place your data in it, then send it to the client.
+
+```kotlin
+PutDataMapRequest req = PutDataMapRequest.create("/catchy/state");
+req.setUrgent();
+
+DataMap map = req.getDataMap();
+map.putString("favourites", favouritesToJson(state.favourites));
+// ... other state fields
+map.putLong("timestamp", System.currentTimeMillis());
+
+Wearable.getDataClient(context)
+        .putDataItem(req.asPutDataRequest())
+        .addOnSuccessListener(item -> Log.d(TAG, "Synced state to watch: " + item.getUri()))
+        .addOnFailureListener(e -> Log.w(TAG, "Failed to sync state to watch", e));
+```
+
+You may notice there we put a timestamp in the sync, this is in the event that we get some events out of order. In that case we want to keep the latest event instead of overwriting the existing preferences.
+
+The `OnSuccessListener` and `OnFailureListener` are also quite useful for debugging, though unless the wear client is unavailable (device does not support a wear connection) you are unlikely to run into that case.
+
+```kotlin
+class WearMessageListenerService : WearableListenerService() {
+    @Suppress("LoopWithTooManyJumpStatements")
+    override fun onDataChanged(dataEvents: DataEventBuffer) {
+        for (event in dataEvents) {
+            if (event.type != DataEvent.TYPE_CHANGED) continue
+            val item = event.dataItem
+            if (item.uri.path != WearStateSync.STATE_PATH) continue
+
+            val dataMap = DataMapItem.fromDataItem(item).dataMap
+            WearStateSync.saveIfNewer(this, dataMap)
+        }
+    }
+}
+```
+
+On the watch app the logic is reasonably similar to the previous MessageClient example, though one key feature we use here is the `WearableListenerService`.
+
+When an event is sent, one of our key failure cases before was when the watch was closed or idle. With the `DataClient` we can use that with the `WearListenerService` which binds our `WearMessageListenerService` so that when we receive an event that service is spun up, we persist the data, then the service gets destroyed, resulting in quite an efficient sync battery wise.
+
+```xml
+<service
+    android:name=".wear.WearMessageListenerService"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+        <data
+            android:scheme="wear"
+            android:host="*"
+            android:path="/catchy/state" />
+    </intent-filter>
+    </service>
+```
+
+A question you may be asking now, is why can't we use the WearListenerService with the MessageClient. The interesting things is, is that you can and the watch will receive updates when the app is closed.
+
+However, we still run into the issue where the watch may be disconnected. That's where the additional features of the `DataClient` really come in handy.
+
+---

@@ -1,4 +1,5 @@
 import AlexaTransportProject from "@/components/projects/alexa-transport";
+import CatchyWearOSProject from "@/components/projects/catchy-wearos";
 import HumanMotionDiffusion from "@/components/projects/human-motion";
 import MinigunProject from "@/components/projects/minigun";
 import RaygunMCPProject from "@/components/projects/raygun-mcp";
@@ -19,6 +20,7 @@ export default function ProjectsPage() {
                 <h1 className="text-3xl font-bold mb-8">Projects</h1>
                 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <CatchyWearOSProject />
                     <RaygunMCPProject />
                     <MinigunProject />
                     <AlexaTransportProject />

@@ -2,39 +2,38 @@ import Link from "next/link";
 import {format} from "date-fns";
 import Image from "next/image";
 
-export default function RaygunMCPProject() {
-    const tags = ["Remote MCP", "TypeScript", "Raygun API", "LLM Tools", "Codex", "Cursor"];
-    const updatedDate = new Date(2026, 3, 14);
+export default function CatchyWearOSProject() {
+    const tags = ["Wear OS", "Kotlin", "Android", "TWA", "Data Layer", "Catchy"];
+    const releaseDate = new Date(2026, 4, 20);
 
     return (
         <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
             <div className="relative w-full h-52 bg-[#001B2E]">
                 <Image
-                    src="/projects/raygun-mcp/mcp-feature-image.webp"
-                    alt="Raygun MCP Server Architecture"
+                    src="/blog/catchy-wearos-wearable-data-layer/catchy-wearos-hero.png"
+                    alt="Catchy Wear OS companion app hero image"
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover rounded-t-lg"
+                    className="object-cover"
                 />
             </div>
-            
+
             <div className="p-5 pt-4 flex flex-col flex-grow">
                 <div className="mb-2">
-                    <Link href="https://github.com/MindscapeHQ/mcp-server-raygun"
+                    <Link href="/blog/catchy-wearos-wearable-data-layer"
                           className="text-xl font-semibold line-clamp-2 block">
-                        Raygun MCP Server
+                        Catchy for Wear OS
                     </Link>
                     <p className="text-sm opacity-70">
-                        Updated: {format(updatedDate, 'MMMM d, yyyy')}
+                        Launched: {format(releaseDate, 'MMMM d, yyyy')}
                     </p>
                 </div>
 
                 <hr/>
 
                 <p className="mb-4 flex-grow line-clamp-3 pt-2">
-                    A remote-first Model Context Protocol server for Raygun, giving AI agents live error data,
-                    deployments, breadcrumbs, customer context, and stack traces so they can investigate and resolve
-                    production issues with real application context.
+                    A Wear OS companion app for Catchy that brings Wellington public transport arrivals, saved stops,
+                    live timing, cancellations, bus replacements, and Android app filters straight to your wrist.
                 </p>
 
                 <div className="mt-auto">
@@ -48,17 +47,17 @@ export default function RaygunMCPProject() {
                     ))}
                 </div>
 
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                    <Link href="https://github.com/MindscapeHQ/mcp-server-raygun" 
+                <div className="flex gap-4 mt-2">
+                    <Link href="https://catchy.nz/"
                           className="text-sm underline">
-                        GitHub
+                        Catchy
                     </Link>
-                    <Link href="https://raygun.com/blog/raygun-mcp-getting-started/"
+                    <Link href="/blog/catchy-wearos-wearable-data-layer"
                           className="text-sm underline">
-                        Latest Blog Post
+                        Blog Post
                     </Link>
                 </div>
             </div>
         </div>
     );
-} 
+}
