@@ -142,6 +142,8 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
                             width={1200}
                             height={630}
                             sizes="(min-width: 768px) 768px, 100vw"
+                            placeholder={post.blurDataURL ? "blur" : "empty"}
+                            blurDataURL={post.blurDataURL}
                             className="h-auto w-full object-cover"
                             priority
                         />
