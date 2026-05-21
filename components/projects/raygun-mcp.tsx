@@ -1,64 +1,24 @@
-import Link from "next/link";
 import {format} from "date-fns";
-import Image from "next/image";
+import { ProjectCard } from "@/components/project-card";
 
 export default function RaygunMCPProject() {
     const tags = ["Remote MCP", "TypeScript", "Raygun API", "LLM Tools", "Codex", "Cursor"];
     const updatedDate = new Date(2026, 3, 14);
 
     return (
-        <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
-            <div className="relative w-full h-52 bg-[#001B2E]">
-                <Image
-                    src="/projects/raygun-mcp/mcp-feature-image.webp"
-                    alt="Raygun MCP Server Architecture"
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover rounded-t-lg"
-                />
-            </div>
-            
-            <div className="p-5 pt-4 flex flex-col flex-grow">
-                <div className="mb-2">
-                    <Link href="https://github.com/MindscapeHQ/mcp-server-raygun"
-                          className="text-xl font-semibold line-clamp-2 block">
-                        Raygun MCP Server
-                    </Link>
-                    <p className="text-sm opacity-70">
-                        Updated: {format(updatedDate, 'MMMM d, yyyy')}
-                    </p>
-                </div>
-
-                <hr/>
-
-                <p className="mb-4 flex-grow line-clamp-3 pt-2">
-                    A remote-first Model Context Protocol server for Raygun, giving AI agents live error data,
-                    deployments, breadcrumbs, customer context, and stack traces so they can investigate and resolve
-                    production issues with real application context.
-                </p>
-
-                <div className="mt-auto">
-                    {tags?.map((tag) => (
-                        <span
-                            key={tag}
-                            className="inline-flex px-2 py-1 bg-red-secondary text-primary-cream text-sm rounded-[10px] mr-2 mb-2"
-                        >
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                    <Link href="https://github.com/MindscapeHQ/mcp-server-raygun" 
-                          className="text-sm underline">
-                        GitHub
-                    </Link>
-                    <Link href="https://raygun.com/blog/raygun-mcp-getting-started/"
-                          className="text-sm underline">
-                        Latest Blog Post
-                    </Link>
-                </div>
-            </div>
-        </div>
+        <ProjectCard
+            title="Raygun MCP Server"
+            href="https://github.com/MindscapeHQ/mcp-server-raygun"
+            meta={`Updated ${format(updatedDate, 'MMMM d, yyyy')}`}
+            description="A remote-first Model Context Protocol server for Raygun, giving AI agents live error data, deployments, breadcrumbs, customer context, and stack traces for production investigations."
+            image="/projects/raygun-mcp/mcp-feature-image.webp"
+            imageAlt="Raygun MCP Server Architecture"
+            tags={tags}
+            links={[
+                { href: "https://github.com/MindscapeHQ/mcp-server-raygun", label: "GitHub" },
+                { href: "https://raygun.com/blog/raygun-mcp-getting-started/", label: "Latest blog post" },
+            ]}
+            priority
+        />
     );
 } 

@@ -5,11 +5,38 @@ import MinigunProject from "@/components/projects/minigun";
 import RaygunMCPProject from "@/components/projects/raygun-mcp";
 import { Metadata } from "next";
 
+const title = "Projects - Reilly Oldham";
+const description =
+    "Software engineering projects across observability, developer tooling, AI integrations, public transport, web applications, and research.";
+const url = "https://www.proredcat.xyz/projects";
+
 export const metadata: Metadata = {
-    title: "Projects - Reilly Oldham",
-    description: "View my software engineering projects including AI research, developer tools, and web applications.",
+    title,
+    description,
     alternates: {
-        canonical: "https://www.proredcat.xyz/projects",
+        canonical: url,
+    },
+    openGraph: {
+        title,
+        description,
+        url,
+        type: "website",
+        siteName: "Reilly Oldham",
+        images: [
+            {
+                url: "/og-image.png",
+                width: 1200,
+                height: 630,
+                alt: "Reilly Oldham - Software Engineer",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: ["/og-image.png"],
+        creator: "@proredcat",
     },
 };
 
@@ -17,7 +44,14 @@ export default function ProjectsPage() {
     return (
         <div className="min-h-screen bg-primary-cream">
             <div className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold mb-8">Projects</h1>
+                <div className="mb-8 max-w-3xl">
+                    <p className="mb-2 text-sm font-semibold text-red-secondary">Selected builds</p>
+                    <h1 className="text-3xl font-bold md:text-4xl">Projects</h1>
+                    <p className="mt-3 text-base leading-7 text-primary-navy-dark/80">
+                        Shipped work and experiments across observability, developer tooling, AI integrations, public
+                        transport, web apps, and research.
+                    </p>
+                </div>
                 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <CatchyWearOSProject />

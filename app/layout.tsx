@@ -17,8 +17,8 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
     title: "Reilly Oldham",
-    description: "Software engineer specializing in backend and full-stack development. Building scalable systems, optimizing performance, and crafting developer tools. View my projects and technical blog.",
-    keywords: ["software engineer", "backend development", "full-stack development", "scalable systems", "performance optimization", "developer tools", "technical blog"],
+    description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
+    keywords: ["software engineer", "backend development", "full-stack development", "AI integrations", "transport apps", "technical blog"],
     authors: [{ name: "Reilly Oldham" }],
     creator: "Reilly Oldham",
     publisher: "Reilly Oldham",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
         locale: "en_US",
         url: "https://www.proredcat.xyz",
         title: "Reilly Oldham - Software Engineer",
-        description: "Software engineer specializing in backend and full-stack development. Building scalable systems, optimizing performance, and crafting developer tools.",
+        description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
         siteName: "Reilly Oldham",
         images: [
             {
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     twitter: {
         card: "summary_large_image",
         title: "Reilly Oldham - Software Engineer",
-        description: "Software engineer specializing in backend and full-stack development. Building scalable systems, optimizing performance, and crafting developer tools.",
+        description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
         images: ["/og-image.png"],
         creator: "@proredcat",
     },

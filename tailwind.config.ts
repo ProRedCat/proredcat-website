@@ -23,8 +23,8 @@ const config: Config = {
         'primary-green-dark': '#003E19',
         'primary-blue-light': '#D8FFFD',
         'primary-blue-dark': '#003D39',
-        'red-secondary': '#FF0000',
-        'orange-secondary': '#FF0000',
+        'red-secondary': '#B42318',
+        'orange-secondary': '#B42318',
       },
       // @ts-expect-error - typography theme function types are not exported
       typography: (theme) => ({

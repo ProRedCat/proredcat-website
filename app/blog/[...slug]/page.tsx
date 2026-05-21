@@ -3,13 +3,44 @@ import {notFound} from "next/navigation";
 import {MDXContent} from "@/components/mdx-component";
 
 import "@/styles/mdx.css";
+import path from "node:path";
+import sharp from "sharp";
 import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
 import {getArticleJsonLd} from "@/lib/jsonld";
+import Link from "next/link";
+import Image from "next/image";
+import { StaticTagChip } from "@/components/tag-chip";
 
 async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
     return posts.find(post => post.slugAsParams === slug);
+}
+
+function getPostImageUrl(hero?: string) {
+    return hero ? `https://www.proredcat.xyz${hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+}
+
+async function getPostImageMetadata(hero: string | undefined, alt: string) {
+    const src = hero || "/blog/default-hero-image.JPG";
+    const url = getPostImageUrl(hero);
+    const publicImagePath = path.join(process.cwd(), "public", src.replace(/^\/+/, ""));
+
+    try {
+        const { width, height } = await sharp(publicImagePath).metadata();
+
+        return {
+            url,
+            width,
+            height,
+            alt,
+        };
+    } catch {
+        return {
+            url,
+            alt,
+        };
+    }
 }
 
 export async function generateStaticParams(): Promise<{ slug: string[] }[]> {
@@ -26,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         return {};
     }
 
-    const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+    const ogImage = await getPostImageMetadata(post.hero, post.title);
     const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
 
     return {
@@ -45,19 +76,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             publishedTime: post.date,
             authors: ["Reilly Oldham"],
             images: [
-                {
-                    url: ogImage,
-                    width: 1200,
-                    height: 630,
-                    alt: post.title,
-                },
+                ogImage,
             ],
         },
         twitter: {
             card: "summary_large_image",
             title: post.title,
             description: post.description,
-            images: [ogImage],
+            images: [ogImage.url],
             creator: "@reillyoldham",
         },
     };
@@ -73,7 +99,7 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
     }
 
     const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
-    const ogImage = post.hero ? `https://www.proredcat.xyz${post.hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+    const ogImage = getPostImageUrl(post.hero);
     
     const articleJsonLd = getArticleJsonLd({
         title: post.title,
@@ -89,15 +115,39 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{__html: JSON.stringify(articleJsonLd)}}
             />
-            <article className="container pt-[15vh] prose w-full mx-auto">
-                <h1 className="mb-2">{post.title}</h1>
-                <div className="mb-4">
-                    <p className="text-sm opacity-70">
-                        {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words
-                        | {readingTime(post.body)} min
+            <article className="prose mx-auto w-full max-w-3xl px-4 py-10 md:py-16">
+                <header className="not-prose mb-10">
+                    <Link href="/blog" className="mb-8 inline-flex text-sm font-semibold underline-offset-4 hover:underline">
+                        Back to writing
+                    </Link>
+                    <h1 className="text-4xl font-bold leading-tight text-primary-navy-dark md:text-5xl">{post.title}</h1>
+                    <p className="mt-4 text-sm text-primary-navy-dark/70">
+                        {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words | {readingTime(post.body)} min
                     </p>
-                </div>
-                <p>{post.description}</p>
+                    <p className="mt-6 text-lg leading-8 text-primary-navy-dark/85">{post.description}</p>
+                    {post.tags?.length ? (
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {post.tags.map((tag) => (
+                                <StaticTagChip key={tag}>{tag}</StaticTagChip>
+                            ))}
+                        </div>
+                    ) : null}
+                </header>
+
+                {post.hero ? (
+                    <div className="not-prose mb-10 overflow-hidden rounded-lg border border-primary-navy-dark/10">
+                        <Image
+                            src={post.hero}
+                            alt={post.title}
+                            width={1200}
+                            height={630}
+                            sizes="(min-width: 768px) 768px, 100vw"
+                            className="h-auto w-full object-cover"
+                            priority
+                        />
+                    </div>
+                ) : null}
+
                 <hr/>
                 <MDXContent code={post.body}/>
             </article>

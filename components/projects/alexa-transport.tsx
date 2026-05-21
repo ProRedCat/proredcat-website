@@ -1,64 +1,23 @@
-import Link from "next/link";
 import {format} from "date-fns";
-import Image from "next/image";
+import { ProjectCard } from "@/components/project-card";
 
 export default function AlexaTransportProject() {
     const tags = ["Alexa ASK", "TypeScript", "AWS", "Lambda", "Vite"];
     const releaseDate = new Date(2024, 9, 10);
 
     return (
-        <div className="flex flex-col w-full h-[480px] shadow-lg rounded-b-3xl">
-            <div className="relative w-full h-52">
-                <Image
-                    src="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
-                    alt="Alexa Skill hero image"
-                    fill
-                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover rounded-t-lg"
-                />
-            </div>
-            
-            <div className="p-5 pt-4 flex flex-col flex-grow">
-                <div className="mb-2">
-                    <Link href="/blog/alexa-skill-announcement-wellington-transport"
-                          className="text-xl font-semibold line-clamp-2 block">
-                        Wellington Public Transport: Alexa Skill
-                    </Link>
-                    <p className="text-sm opacity-70">
-                        Launched: {format(releaseDate, 'MMMM d, yyyy')}
-                    </p>
-                </div>
-
-                <hr/>
-
-                <p className="mb-4 flex-grow line-clamp-3 pt-2">
-                    An Alexa Skill for Wellington&apos;s Metlink transport, offering real-time bus and train schedules.
-                    Designed with hands-free convenience in mind, it&apos;s perfect for busy mornings when checking your
-                    phone isn&apos;t ideal.
-                </p>
-
-                <div className="mt-auto">
-                    {tags?.map((tag) => (
-                        <span
-                            key={tag}
-                            className="inline-flex px-2 py-1 bg-red-secondary text-primary-cream text-sm rounded-[10px] mr-2 mb-2"
-                        >
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-
-                <div className="flex gap-4 mt-2">
-                    <Link href="https://www.amazon.com.au/dp/B0D2DN6DX9/" 
-                          className="text-sm underline">
-                        Alexa Skill Store
-                    </Link>
-                    <Link href="/blog/alexa-skill-announcement-wellington-transport"
-                          className="text-sm underline">
-                        Blog Post
-                    </Link>
-                </div>
-            </div>
-        </div>
+        <ProjectCard
+            title="Wellington Public Transport: Alexa Skill"
+            href="/blog/alexa-skill-announcement-wellington-transport"
+            meta={`Launched ${format(releaseDate, 'MMMM d, yyyy')}`}
+            description="An Alexa Skill for Wellington's Metlink transport, offering real-time bus and train schedules for hands-free checks during busy mornings."
+            image="/blog/alexa-skill-announcement-wellington-transport/hero.webp"
+            imageAlt="Alexa Skill hero image"
+            tags={tags}
+            links={[
+                { href: "https://www.amazon.com.au/dp/B0D2DN6DX9/", label: "Alexa Skill Store" },
+                { href: "/blog/alexa-skill-announcement-wellington-transport", label: "Blog post" },
+            ]}
+        />
     );
 }

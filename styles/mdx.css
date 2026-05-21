@@ -37,3 +37,7 @@
 .subheading-anchor {
     @apply no-underline hover:underline;
 }
+
+.prose > hr:has(+ aside.not-prose) {
+    @apply hidden;
+}
