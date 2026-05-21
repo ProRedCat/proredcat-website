@@ -1,8 +1,8 @@
 ---
 title: "Catchy for Wear OS, bridging TWAs and the Wearable Data Layer"
 date: 2026-05-20
-description: This blog covers building a Wear OS companion app for Catchy, Wellington's best public transport app. It explores the Wearable Data Layer API for syncing user state to the watch, and the unexpected challenge of bridging a Trusted Web Activity to native Android code.
-shortDescription: A technical look at building the Catchy Wear OS companion app for Wellington's best public transport app.
+description: Building a Wear OS companion app for Catchy, Wellington's best public transport app, using the Wearable Data Layer to sync user state to the watch and bridge a Trusted Web Activity to native Android code.
+shortDescription: Building the Catchy Wear OS companion app, with synced favourites and live Wellington transport data on your wrist.
 hero: /blog/catchy-wearos-wearable-data-layer/catchy-wearos-hero.png
 published: true
 tags: ["Wear OS", "Kotlin", "Project", "Technical"]
@@ -67,13 +67,16 @@ Once I ran into this issue of being more resilient I went back to the drawing bo
 
 Here's a table I've assembled that breaks down each client with how it works and what does it support in terms of features:
 
+
 | Client            | How it works                                      | Supports > 100KB? | Survives Disconnection? |
 |-------------------|---------------------------------------------------|-------------------|-------------------------|
 | **DataClient**    | Syncs a persistent key-value store across devices | Yes (via `Asset`) | Yes                     |
 | **MessageClient** | Fire-and-forget message to a connected node       | No                | No                      |
 | **ChannelClient** | Bidirectional stream between two connected nodes  | Yes               | No                      |
 
-Based on my requirements, `DataClient` appeared to be the best option for me, but the other options have their use cases in other projects, especially for file transfers or larger syncs.
+Note: Some features like the transfer limit isn't a requirement for us, but it's still useful to be aware of what the limits are for these clients.
+
+Based on my requirements though, `DataClient` appeared to be the best option for me, but the other options have their use cases in other projects, especially for large transfers or more frequent syncs.
 
 ### Persistent State Sync with DataClient
 
@@ -138,4 +141,22 @@ A question you may be asking now, is why can't we use the WearListenerService wi
 
 However, we still run into the issue where the watch may be disconnected. That's where the additional features of the `DataClient` really come in handy.
 
----
+In the happy path, when we put a new `DataMap` into the `/catchy/state` path the watch will be connected to the phone directly. In this case that data is sent over to the device.
+However, in the case that the watch is off, disconnected, or any other state that means it is not connected the DataClient will buffer this update locally in the phone. Once the watch reconnects
+the phone will then immediately be sent to the watch where the `WearMessageListenerService` picks that up and persists it to the watch.
+
+Now another interesting thing, is that you don't just have to be connected over Bluetooth to the watch. As long as there is a network connection on both the watch and the phone, the DataClient will attempt to route through a Google server to the watch so that
+it can complete the sync.
+
+<div className="w-full flex flex-col justify-center items-center">
+    <Image src="/blog/catchy-wearos-wearable-data-layer/data-layer-node-network.svg" width={240} height={240} />
+    <p>Source: [Overview of Data Layer API](https://developer.android.com/training/wearables/data/overview)</p>
+</div>
+
+With the design I've implemented for the Catchy Wear OS app, the watch will always be in sync with the phone. No matter if it's offline and comes back online, or it's already open, the watch will immediately get updates from the phone.
+
+## Trusted Web Activities
+
+It may be familiar that some apps are not written natively for Android or iOS, there are languages such as React Native, Flutter, and event MAUI, which allow you to .
+
+Another technique is
