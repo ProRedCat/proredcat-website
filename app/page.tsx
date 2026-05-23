@@ -17,8 +17,8 @@ export default function Home() {
         <div className="px-4 py-8 md:py-7">
             <section className="border-b border-primary-navy-dark/15 pb-4 md:pb-5">
                 <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-12">
-                    <div className="max-w-4xl">
-                        <div className="max-w-3xl">
+                    <div className="min-w-0">
+                        <div>
                             <p className="mb-3 text-sm font-semibold text-red-secondary">
                                 Software engineer in Wellington, NZ
                             </p>
