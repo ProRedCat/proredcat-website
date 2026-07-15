@@ -9,6 +9,8 @@ import {Analytics} from "@vercel/analytics/react";
 import {getPersonJsonLd, getWebsiteJsonLd} from "@/lib/jsonld";
 import {siteConfig} from "@/config/site";
 
+const isProduction = process.env.VERCEL_ENV === "production";
+
 const spaceGrotesk = Space_Grotesk({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700"],
@@ -53,11 +55,11 @@ export const metadata: Metadata = {
         creator: "@proredcat",
     },
     robots: {
-        index: true,
-        follow: true,
+        index: isProduction,
+        follow: isProduction,
         googleBot: {
-            index: true,
-            follow: true,
+            index: isProduction,
+            follow: isProduction,
             'max-video-preview': -1,
             'max-image-preview': 'large',
             'max-snippet': -1,
