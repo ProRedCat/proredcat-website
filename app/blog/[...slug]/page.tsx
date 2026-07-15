@@ -11,6 +11,7 @@ import {getArticleJsonLd} from "@/lib/jsonld";
 import Link from "next/link";
 import Image from "next/image";
 import { StaticTagChip } from "@/components/tag-chip";
+import { siteConfig } from "@/config/site";
 
 async function getPostFromParams(params: { slug: string[] }) {
     const slug = params?.slug?.join("/");
@@ -18,7 +19,7 @@ async function getPostFromParams(params: { slug: string[] }) {
 }
 
 function getPostImageUrl(hero?: string) {
-    return hero ? `https://www.proredcat.xyz${hero}` : "https://www.proredcat.xyz/blog/default-hero-image.JPG";
+    return hero ? `${siteConfig.url}${hero}` : `${siteConfig.url}/blog/default-hero-image.JPG`;
 }
 
 async function getPostImageMetadata(hero: string | undefined, alt: string) {
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const ogImage = await getPostImageMetadata(post.hero, post.title);
-    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
+    const canonicalUrl = `${siteConfig.url}/${post.slug}`;
 
     return {
         title: post.title,
@@ -98,7 +99,7 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
         notFound();
     }
 
-    const canonicalUrl = `https://www.proredcat.xyz/${post.slug}`;
+    const canonicalUrl = `${siteConfig.url}/${post.slug}`;
     const ogImage = getPostImageUrl(post.hero);
     
     const articleJsonLd = getArticleJsonLd({

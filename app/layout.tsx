@@ -7,6 +7,7 @@ import {cn} from "@/lib/utils";
 import {SpeedInsights} from "@vercel/speed-insights/next";
 import {Analytics} from "@vercel/analytics/react";
 import {getPersonJsonLd, getWebsiteJsonLd} from "@/lib/jsonld";
+import {siteConfig} from "@/config/site";
 
 const spaceGrotesk = Space_Grotesk({
     subsets: ["latin"],
@@ -27,11 +28,11 @@ export const metadata: Metadata = {
         address: false,
         telephone: false,
     },
-    metadataBase: new URL('https://www.proredcat.xyz'),
+    metadataBase: new URL(siteConfig.url),
     openGraph: {
         type: "website",
         locale: "en_US",
-        url: "https://www.proredcat.xyz",
+        url: siteConfig.url,
         title: "Reilly Oldham - Software Engineer",
         description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
         siteName: "Reilly Oldham",
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
         },
     },
     alternates: {
-        canonical: "https://www.proredcat.xyz",
+        canonical: siteConfig.url,
     },
 };
 

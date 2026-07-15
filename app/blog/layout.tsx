@@ -1,9 +1,10 @@
 import { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 const title = "Blog - Reilly Oldham";
 const description =
     "Technical deep dives and build notes from backend systems, developer tooling, product work, and the occasional rabbit hole.";
-const url = "https://www.proredcat.xyz/blog";
+const url = `${siteConfig.url}/blog`;
 
 export const metadata: Metadata = {
     title,

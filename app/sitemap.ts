@@ -1,8 +1,9 @@
 import { MetadataRoute } from 'next';
 import { posts } from '#site/content';
+import { siteConfig } from '@/config/site';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://www.proredcat.xyz';
+  const baseUrl = siteConfig.url;
 
   const blogPosts = posts
     .filter(post => post.published)

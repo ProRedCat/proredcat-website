@@ -1,11 +1,12 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { Icons } from "@/components/icons";
+import { siteConfig } from "@/config/site";
 
 const title = "About - Reilly Oldham";
 const description =
     "About Reilly Oldham, a backend and full-stack software engineer working across backend systems, observability, developer tooling, and product interfaces.";
-const url = "https://www.proredcat.xyz/about";
+const url = `${siteConfig.url}/about`;
 
 export const metadata: Metadata = {
     title,

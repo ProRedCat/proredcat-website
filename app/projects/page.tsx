@@ -4,11 +4,12 @@ import HumanMotionDiffusion from "@/components/projects/human-motion";
 import MinigunProject from "@/components/projects/minigun";
 import RaygunMCPProject from "@/components/projects/raygun-mcp";
 import { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 const title = "Projects - Reilly Oldham";
 const description =
     "Software engineering projects across observability, developer tooling, AI integrations, public transport, web applications, and research.";
-const url = "https://www.proredcat.xyz/projects";
+const url = `${siteConfig.url}/projects`;
 
 export const metadata: Metadata = {
     title,

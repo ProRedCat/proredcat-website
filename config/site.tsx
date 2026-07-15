@@ -1,6 +1,6 @@
 export const siteConfig = {
     name: "Reilly Oldham",
-    url: "https://www.proredcat.xyz",
+    url: "https://www.proredcat.dev",
     description: "Reilly Oldham's blog and portfolio",
     author: "Reilly Oldham",
     links: {
