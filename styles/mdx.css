@@ -1,11 +1,14 @@
 @reference "../app/globals.css";
 
 [data-rehype-pretty-code-figure] pre {
-    @apply px-0;
+    @apply max-w-full overflow-x-auto px-0;
 }
 
 [data-rehype-pretty-code-figure] code {
     @apply text-sm !leading-loose md:text-base border-0 p-0;
+    display: block;
+    min-width: 100%;
+    width: max-content;
 }
 
 [data-rehype-pretty-code-figure] code[data-line-numbers] {
@@ -20,6 +23,7 @@
 
 [data-rehype-pretty-code-figure] [data-line] {
     @apply border-l-2 border-l-transparent px-3;
+    display: block;
 }
 
 [data-rehype-pretty-code-figure] [data-highlighted-line] {
@@ -42,4 +46,10 @@
 
 .prose > hr:has(+ aside.not-prose) {
     @apply hidden;
+}
+
+.prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
 }
