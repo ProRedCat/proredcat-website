@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -15,9 +15,55 @@ const navItems = [
 export function PageNav() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const menuDialogRef = useRef<HTMLDivElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
 
     const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
+        setIsMenuOpen((open) => !open);
+    };
+
+    const closeMenu = () => {
+        setIsMenuOpen(false);
+        requestAnimationFrame(() => menuButtonRef.current?.focus());
+    };
+
+    useEffect(() => {
+        if (!isMenuOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        closeButtonRef.current?.focus();
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isMenuOpen]);
+
+    const handleDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeMenu();
+            return;
+        }
+
+        if (event.key !== "Tab") return;
+
+        const focusable = menuDialogRef.current?.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable?.length) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
     };
 
     const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -49,12 +95,14 @@ export function PageNav() {
 
             {/* Mobile Menu Button */}
             <button 
+                ref={menuButtonRef}
                 onClick={toggleMenu}
                 className="md:hidden ml-4 p-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-navy-dark"
-                aria-label="Toggle menu"
+                aria-label="Open navigation menu"
                 aria-expanded={isMenuOpen}
+                aria-controls="mobile-navigation-menu"
             >
-                <div className="w-6 flex flex-col gap-1">
+                <span className="flex w-6 flex-col gap-1" aria-hidden="true">
                     <span className={cn(
                         "block h-0.5 w-full bg-primary-navy-dark transition-transform duration-300",
                         isMenuOpen && "rotate-45 translate-y-1.5"
@@ -67,26 +115,35 @@ export function PageNav() {
                         "block h-0.5 w-full bg-primary-navy-dark transition-transform duration-300",
                         isMenuOpen && "-rotate-45 -translate-y-1.5"
                     )}/>
-                </div>
+                </span>
             </button>
 
             {/* Mobile Menu Overlay */}
             {isMenuOpen ? (
-                <div className="fixed inset-0 z-50 bg-primary-cream md:hidden">
+                <div
+                    ref={menuDialogRef}
+                    id="mobile-navigation-menu"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Navigation menu"
+                    onKeyDown={handleDialogKeyDown}
+                    className="fixed inset-0 z-50 bg-primary-cream md:hidden"
+                >
                     {/* Close Button */}
                     <button
-                        onClick={() => setIsMenuOpen(false)}
+                        ref={closeButtonRef}
+                        onClick={closeMenu}
                         className="absolute top-5 right-5 p-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-navy-dark"
                         aria-label="Close menu"
                     >
-                        <div className="w-6 h-6 flex items-center justify-center">
+                        <span className="flex h-6 w-6 items-center justify-center" aria-hidden="true">
                             <span className="block h-0.5 w-6 bg-primary-navy-dark rotate-45 absolute"></span>
                             <span className="block h-0.5 w-6 bg-primary-navy-dark -rotate-45 absolute"></span>
-                        </div>
+                        </span>
                     </button>
 
                     <div className="flex flex-col items-center justify-center h-full space-y-8">
-                        <Link href="/" className={mobileLinkClass("/")} onClick={() => setIsMenuOpen(false)}>
+                        <Link href="/" className={mobileLinkClass("/")} onClick={closeMenu}>
                             Home
                         </Link>
                         {navItems.map((item) => (
@@ -94,7 +151,7 @@ export function PageNav() {
                                 key={item.href}
                                 href={item.href}
                                 className={mobileLinkClass(item.href)}
-                                onClick={() => setIsMenuOpen(false)}
+                                onClick={closeMenu}
                             >
                                 {item.label}
                             </Link>
