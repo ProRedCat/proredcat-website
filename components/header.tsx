@@ -30,6 +30,15 @@ export function Header() {
                             <Icons.LinkedIn className="h-9 w-9"/>
                             <span className="sr-only">LinkedIn</span>
                         </Link>
+                        <Link
+                            href={siteConfig.links.twitter}
+                            className="pb-2 pt-2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Icons.Twitter className="h-8 w-8"/>
+                            <span className="sr-only">X (Twitter)</span>
+                        </Link>
                     </nav>
                 </div>
                 <div className="sticky top-14 w-full">

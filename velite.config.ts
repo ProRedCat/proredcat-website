@@ -39,6 +39,7 @@ const posts = defineCollection({
             description: s.string().max(999),
             shortDescription: s.string().max(999),
             date: s.isodate(),
+            updated: s.isodate().optional(),
             hero: s.string().max(999).optional(),
             published: s.boolean().default(true),
             tags: s.array(s.string()).optional(),
@@ -67,7 +68,6 @@ export default defineConfig({
                     behavior: "wrap",
                     properties: {
                         className: ["subheading-anchor"],
-                        ariaLabel: "Link to section",
                     },
                 },
             ],

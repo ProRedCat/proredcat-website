@@ -6,7 +6,7 @@ import {Header} from "@/components/header";
 import {cn} from "@/lib/utils";
 import {SpeedInsights} from "@vercel/speed-insights/next";
 import {Analytics} from "@vercel/analytics/react";
-import {getPersonJsonLd, getWebsiteJsonLd} from "@/lib/jsonld";
+import {getPersonJsonLd, getWebsiteJsonLd, serializeJsonLd} from "@/lib/jsonld";
 import {siteConfig} from "@/config/site";
 
 const isProduction = process.env.VERCEL_ENV === "production";
@@ -19,7 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-    title: "Reilly Oldham",
+    title: "Reilly Oldham — Software Engineer",
     description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
     keywords: ["software engineer", "backend development", "full-stack development", "AI integrations", "transport apps", "technical blog"],
     authors: [{ name: "Reilly Oldham" }],
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     metadataBase: new URL(siteConfig.url),
     openGraph: {
         type: "website",
-        locale: "en_US",
+        locale: "en_NZ",
         url: siteConfig.url,
         title: "Reilly Oldham - Software Engineer",
         description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
@@ -67,6 +67,9 @@ export const metadata: Metadata = {
     },
     alternates: {
         canonical: siteConfig.url,
+        types: {
+            "application/rss+xml": `${siteConfig.url}/feed.xml`,
+        },
     },
 };
 
@@ -80,11 +83,11 @@ export default function RootLayout({
         <head>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{__html: JSON.stringify(getPersonJsonLd())}}
+                dangerouslySetInnerHTML={{__html: serializeJsonLd(getPersonJsonLd())}}
             />
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{__html: JSON.stringify(getWebsiteJsonLd())}}
+                dangerouslySetInnerHTML={{__html: serializeJsonLd(getWebsiteJsonLd())}}
             />
         </head>
         <body className={cn("min-h-screen container mx-auto max-w-screen-2xl", "p-4 pt-0")}>

@@ -7,7 +7,7 @@ import path from "node:path";
 import sharp from "sharp";
 import {format} from "date-fns";
 import {readingTime, wordCount} from "@/lib/utils";
-import {getArticleJsonLd} from "@/lib/jsonld";
+import {getArticleBreadcrumbJsonLd, getArticleJsonLd, serializeJsonLd} from "@/lib/jsonld";
 import Link from "next/link";
 import Image from "next/image";
 import { StaticTagChip } from "@/components/tag-chip";
@@ -67,6 +67,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         authors: [{ name: "Reilly Oldham" }],
         alternates: {
             canonical: canonicalUrl,
+            types: {
+                "application/rss+xml": `${siteConfig.url}/feed.xml`,
+            },
         },
         openGraph: {
             title: post.title,
@@ -75,6 +78,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             url: canonicalUrl,
             siteName: "Reilly Oldham",
             publishedTime: post.date,
+            modifiedTime: post.updated ?? post.date,
             authors: ["Reilly Oldham"],
             images: [
                 ogImage,
@@ -85,7 +89,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             title: post.title,
             description: post.description,
             images: [ogImage.url],
-            creator: "@reillyoldham",
+            creator: "@proredcat",
         },
     };
 }
@@ -94,7 +98,6 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
     const resolvedParams = await params;
     const post = await getPostFromParams(resolvedParams);
 
-    // TODO: Create a custom 404 page as the default looks bad
     if (!post || !post.published) {
         notFound();
     }
@@ -106,15 +109,21 @@ export default async function PostPage({params}: { params: Promise<{ slug: strin
         title: post.title,
         description: post.description,
         datePublished: post.date,
+        dateModified: post.updated ?? post.date,
         url: canonicalUrl,
         image: ogImage,
     });
+    const breadcrumbJsonLd = getArticleBreadcrumbJsonLd(post.title, canonicalUrl);
 
     return (
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{__html: JSON.stringify(articleJsonLd)}}
+                dangerouslySetInnerHTML={{__html: serializeJsonLd(articleJsonLd)}}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: serializeJsonLd(breadcrumbJsonLd)}}
             />
             <article className="prose mx-auto w-full max-w-3xl px-4 py-10 md:py-16">
                 <header className="not-prose mb-10">

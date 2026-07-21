@@ -17,6 +17,11 @@ export const Icons = {
             ></path>
         </svg>
     ),
+    Twitter: (props: IconProps) => (
+        <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+            <path d="M18.901 1.153h3.68l-8.038 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.472l8.6-9.83L0 1.154h7.594l5.243 6.932 6.064-6.932Zm-1.29 19.693h2.04L6.486 3.05H4.298L17.61 20.846Z" />
+        </svg>
+    ),
     Profile: (props: IconProps) => (
         <svg viewBox="0 0 64 64" {...props}>
             <rect x="0" y="0" width="64" height="64" fill="white" stroke="black" strokeWidth="2"/>

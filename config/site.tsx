@@ -1,11 +1,12 @@
 export const siteConfig = {
     name: "Reilly Oldham",
     url: "https://www.proredcat.dev",
-    description: "Reilly Oldham's blog and portfolio",
+    description: "Portfolio and technical writing from Reilly Oldham, a backend and full-stack software engineer in Wellington, New Zealand.",
     author: "Reilly Oldham",
     links: {
         github: "https://github.com/ProRedCat",
         linkedin: "https://www.linkedin.com/in/reilly-oldham/",
+        twitter: "https://x.com/ProRedCat",
     },
 };
 

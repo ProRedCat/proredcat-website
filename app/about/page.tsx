@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { Icons } from "@/components/icons";
 import { siteConfig } from "@/config/site";
+import { getProfilePageJsonLd, serializeJsonLd } from "@/lib/jsonld";
 
 const title = "About - Reilly Oldham";
 const description =
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
     description,
     alternates: {
         canonical: url,
+        types: {
+            "application/rss+xml": `${siteConfig.url}/feed.xml`,
+        },
     },
     openGraph: {
         title,
@@ -79,6 +83,7 @@ const profileFacts = [
 const elsewhereLinks = [
     { label: "GitHub", handle: "ProRedCat", href: "https://github.com/ProRedCat", Icon: Icons.GitHub },
     { label: "LinkedIn", handle: "reilly-oldham", href: "https://www.linkedin.com/in/reilly-oldham/", Icon: Icons.LinkedIn },
+    { label: "X", handle: "@ProRedCat", href: siteConfig.links.twitter, Icon: Icons.Twitter },
 ];
 
 const recentWork = [
@@ -110,7 +115,12 @@ function isExternalUrl(href: string) {
 
 export default function AboutPage() {
     return (
-        <div className="min-h-screen bg-primary-cream">
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{__html: serializeJsonLd(getProfilePageJsonLd())}}
+            />
+            <div className="min-h-screen bg-primary-cream">
             <div className="container mx-auto px-4 py-8">
                 <div className="grid gap-y-14 lg:grid-cols-[minmax(0,42rem)_minmax(19rem,1fr)] lg:gap-x-24 2xl:gap-x-32">
                     <section>
@@ -231,6 +241,7 @@ export default function AboutPage() {
                     </section>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 }
