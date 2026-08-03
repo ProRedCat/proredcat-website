@@ -1,14 +1,40 @@
+'use client';
+
 import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Post } from "@/.velite";
-import {readingTime, wordCount} from "@/lib/utils";
+import { useState } from 'react';
 import { FilterTagButton } from "@/components/tag-chip";
 import { Icons } from "@/components/icons";
 
 const DEFAULT_HERO_IMAGE = "/blog/default-hero-image.JPG";
 
-export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts: Post[], onTagClick: (tag: string) => void, selectedTags: string[] }) {
+type BlogPostSummary = {
+    slug: string;
+    title: string;
+    date: string;
+    shortDescription: string;
+    hero?: string;
+    blurDataURL: string;
+    tags?: string[];
+    words: number;
+    readingMinutes: number;
+};
+
+export default function BlogPreview({ posts }: { posts: BlogPostSummary[] }) {
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const visiblePosts = selectedTags.length > 0
+        ? posts.filter((post) => post.tags?.some((tag) => selectedTags.includes(tag)))
+        : posts;
+
+    const toggleTag = (tag: string) => {
+        setSelectedTags((currentTags) =>
+            currentTags.includes(tag)
+                ? currentTags.filter((currentTag) => currentTag !== tag)
+                : [...currentTags, tag]
+        );
+    };
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8 max-w-3xl">
@@ -24,7 +50,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                     <p className="text-sm font-semibold">Filtered by</p>
                     <div className="flex flex-wrap gap-2">
                         {selectedTags.map((tag) => (
-                            <FilterTagButton key={tag} selected onClick={() => onTagClick(tag)}>
+                            <FilterTagButton key={tag} selected onClick={() => toggleTag(tag)}>
                                 {tag}
                             </FilterTagButton>
                         ))}
@@ -32,9 +58,9 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                 </div>
             ) : null}
 
-            {posts?.length > 0 ? (
+            {visiblePosts.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {posts.map((post) => (
+                    {visiblePosts.map((post) => (
                         <article
                             key={post.slug}
                             className="group flex h-full flex-col overflow-hidden rounded-lg border border-primary-navy-dark/10 bg-primary-cream shadow-[0_12px_28px_rgba(0,26,77,0.08)] transition duration-200 hover:-translate-y-0.5 hover:border-primary-navy-dark/25 hover:shadow-[0_16px_34px_rgba(0,26,77,0.12)]"
@@ -47,7 +73,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                         sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                                         placeholder={post?.blurDataURL ? "blur" : "empty"}
                                         blurDataURL={post?.blurDataURL}
-                                        priority={post === posts[0]}
+                                        priority={post === visiblePosts[0]}
                                         className="object-cover transition duration-300 group-hover:scale-[1.02]"
                                     />
                             </Link>
@@ -59,7 +85,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                         </Link>
                                     </h2>
                                     <p className="mt-2 text-sm text-primary-navy-dark/70">
-                                            {format(new Date(post.date), 'MMMM d, yyyy')} | {wordCount(post.body)} words | {readingTime(post.body)} min
+                                            {format(new Date(post.date), 'MMMM d, yyyy')} | {post.words} words | {post.readingMinutes} min
                                     </p>
                                 </div>
 
@@ -70,7 +96,7 @@ export default function BlogPreview({ posts, onTagClick, selectedTags }: { posts
                                                 key={tag}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    onTagClick(tag);
+                                                    toggleTag(tag);
                                                 }}
                                                 selected={selectedTags.includes(tag)}
                                             >

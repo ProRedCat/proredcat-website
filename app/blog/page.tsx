@@ -1,31 +1,26 @@
-'use client'
-
 import BlogPreview from "@/components/blog-preview";
 import {posts} from "@/.velite";
-import {useState} from "react";
+import {readingTime, wordCount} from "@/lib/utils";
 
 export default function BlogPage() {
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-    const toggleTag = (tag: string) => {
-        setSelectedTags(prev =>
-            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-        );
-    };
-
-    const publishedPosts = posts.filter(post => post.published);
-    
-    const filteredPosts = selectedTags.length > 0
-        ? publishedPosts.filter(post => post.tags?.some(tag => selectedTags.includes(tag)))
-        : publishedPosts;
-
-    const sortedPosts = [...filteredPosts].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    const postSummaries = posts
+        .filter((post) => post.published)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .map((post) => ({
+            slug: post.slug,
+            title: post.title,
+            date: post.date,
+            shortDescription: post.shortDescription,
+            hero: post.hero,
+            blurDataURL: post.blurDataURL,
+            tags: post.tags,
+            words: wordCount(post.body),
+            readingMinutes: readingTime(post.body),
+        }));
 
     return (
         <div className="w-full h-full">
-            <BlogPreview posts={sortedPosts} onTagClick={toggleTag} selectedTags={selectedTags}/>
+            <BlogPreview posts={postSummaries}/>
         </div>
     );
 }
