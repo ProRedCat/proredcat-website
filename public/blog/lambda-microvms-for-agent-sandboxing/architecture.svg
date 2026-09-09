@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="620" viewBox="0 0 1000 620" role="img" aria-labelledby="title desc">
+  <title id="title">Shared paths, two access routes</title>
+  <desc id="desc">The agent uses application file tools directly or runs programs inside a Lambda MicroVM. Programs use rclone and FUSE to reach WebDAV. Both routes retain Autohive's path resolution, grants and file metadata before accessing stored assets. Local scratchpad is not shown.</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#29424d"/></marker></defs>
+  <rect width="1000" height="620" fill="#fffdec"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#29424d" text-anchor="middle">
+    <text x="40" y="42" text-anchor="start" font-size="26">Shared paths, two access routes</text>
+    <text x="500" y="99" font-size="25">Agent / harness</text>
+    <g fill="none" stroke="#29424d" stroke-width="1.7" marker-end="url(#arrow)">
+      <path d="M500 115 H230 V193"/>
+      <path d="M500 115 H750 V193"/>
+    </g>
+    <text x="230" y="222" font-size="24">Application file tools</text>
+    <text x="230" y="250" font-size="20" fill="#65766f">Durable paths; no VM required</text>
+    <rect x="585" y="168" width="330" height="185" fill="none" stroke="#9ca79b" stroke-width="1.3" stroke-dasharray="6 5"/>
+    <text x="585" y="153" text-anchor="start" font-size="18" fill="#65766f">Lambda MicroVM</text>
+    <text x="750" y="222" font-size="24">Ordinary programs</text>
+    <path d="M750 239 V282" fill="none" stroke="#29424d" stroke-width="1.7" marker-end="url(#arrow)"/>
+    <text x="750" y="311" font-size="24">FUSE + rclone</text>
+    <text x="750" y="339" font-size="20" fill="#65766f">Mounted paths and local cache</text>
+    <path d="M750 354 V391" fill="none" stroke="#29424d" stroke-width="1.7" marker-end="url(#arrow)"/>
+    <text x="750" y="420" font-size="24">WebDAV endpoint</text>
+    <g fill="none" stroke="#29424d" stroke-width="1.7" marker-end="url(#arrow)">
+      <path d="M230 270 V462 H440 V489"/>
+      <path d="M750 438 V462 H560 V489"/>
+    </g>
+    <text x="500" y="516" font-size="25">Autohive content model</text>
+    <text x="500" y="544" font-size="20" fill="#65766f">Path resolution · grants · file metadata</text>
+    <path d="M500 554 V579" fill="none" stroke="#29424d" stroke-width="1.7" marker-end="url(#arrow)"/>
+    <text x="500" y="608" font-size="24">StorageService assets</text>
+  </g>
+</svg>
