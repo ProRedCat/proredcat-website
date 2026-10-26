@@ -1,0 +1,217 @@
+---
+title: "Building an agent runtime with Lambda MicroVMs"
+date: 2026-09-09
+description: "Inside our Lambda MicroVM agent runtime: snapshot preparation, a WebDAV filesystem, faster metadata requests and credential proxying for existing connections."
+shortDescription: "Mounting Autohive’s application files inside AWS Lambda MicroVMs with WebDAV and rclone."
+published: true
+tags: ["AWS Lambda", "Lambda MicroVMs", "WebDAV", "Agents", "Technical"]
+---
+
+Recently I used Autohive to make a presentation about the agent harness we've been building. It read the source material, generated a PowerPoint, and worked through revisions with me. The presentation was explaining the same system that was being used to create it, which was a pretty satisfying way to see the pieces come together.
+
+The idea behind it is straightforward: **paths became a shared interface between the agent, its tools and the programs it could run.** A Python script could open a conversation input, write a workbook and pass that output into the next step. Underneath those ordinary file operations, Autohive still owned the files, their permissions and their storage.
+
+At [Autohive](https://www.autohive.com/), we already had those application capabilities. The interesting work was connecting them to a computer the agent could use: an isolated guest with ordinary programs, a mounted view of application files, and access to existing API connections. This post walks through how we built that runtime on AWS Lambda MicroVMs. I'll cover the startup and credential-proxy design here, then go further into their optimization and security details in the next two posts.
+
+## File references weren’t enough
+
+Users could already upload documents, organize workspace content and grant agents access. Tools returned file references, and agents could selectively read them rather than put every attachment into the model's context.
+
+But a file reference wasn't something Python could pass to `open()`.
+
+The platform knew which conversation or workspace owned the file and where its bytes lived. A program in one of our integration-specific containers needed those bytes transferred into its own environment. Moving a file between operations meant dealing with that boundary again.
+
+What I wanted was this kind of addressing:
+
+```python
+from pathlib import Path
+import pandas as pd
+
+sales = pd.read_csv("/conversation-inputs/sales-demo.csv")
+
+# Clean and analyse the records here.
+
+output = Path("/outputs/sales-analysis.xlsx")
+sales.to_excel(output, index=False)
+```
+
+This is a shortened example: a conversation upload becomes a workbook the application can present, without the program understanding our storage service.
+
+That only helps if the surrounding tools understand those paths too. Andre and I worked across the backing records, file tools, integration adapters, prompts and presentation behavior to establish that interface. We deliberately held back the reader's path switch until the surrounding pieces were ready; one path-based tool among ID-based tools would leave the agent translating between conventions.
+
+Internal IDs still handle registration and ownership, and some integration boundaries retain storage-oriented representations. The goal was a common agent-facing address, not removing identifiers from the platform.
+
+## Why Lambda MicroVMs
+
+I first tried fitting this into our existing Fargate execution infrastructure, but the access and capabilities needed for the FUSE mount weren't available in that environment.
+
+The fallback started with a periodic copy loop, then moved to `rclone bisync` and synchronization around command execution. It let us try the workflow, but left two trees to reconcile. A command could change the local files while the platform changed the remote ones. Deleted or moved files could reappear after synchronization.
+
+I was happy to keep Fargate if that workaround could provide fast, dependable file access. Instead, we were accumulating work around commands to keep the copies aligned. Cold startup was another frustration, but the filesystem requirement was a substantial reason to look elsewhere.
+
+AWS [announced managed Lambda MicroVMs in June](https://aws.amazon.com/blogs/aws/run-isolated-sandboxes-with-full-lifecycle-control-aws-lambda-introduces-microvms/), around the time I was working through this. These are a separate managed resource from ordinary Lambda functions: we prepare an environment and run isolated MicroVMs from it, with application lifecycle hooks.
+
+For this design, the useful combination was VM-level isolation and privileged setup inside the guest, while keeping agent commands unprivileged. We could mount the filesystem without giving the agent the supervisor's privileges, or operating the Firecracker hosts ourselves.
+
+Our Go supervisor handles lifecycle and mount setup. A resident rclone daemon owns the mount, and a Node execution service launches commands as an unprivileged user. Public bind mounts expose the intended directories, while WebDAV independently checks application access. The MicroVM isolates the code's execution environment; application authorization governs which platform files that session can reach.
+
+
+### Preparing a running environment
+
+An ordinary container image gives you a filesystem from which to start processes. Lambda's [MicroVM image preparation](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html) also captures initialized memory. AWS builds the environment, starts the application and waits for its readiness hook before taking the disk and memory snapshot. New MicroVMs restore from that prepared state. A validation hook exercises a restored instance before the image is ready for use.
+
+That changes where we can do the setup work. Our image contains the runtimes and document tooling, but we also start the Go supervisor, Node execution service and rclone daemon during preparation. Those processes stay running when the image is captured.
+
+The snapshot can't contain the next conversation's assignment. At run time, the supervisor receives the session's WebDAV address and bearer, asks the resident rclone daemon to mount that remote, and exposes the public directories through bind mounts. Agent commands run under an unprivileged user, separately from the trusted processes that configure the guest.
+
+Mount setup is asynchronous. Returning from a lifecycle hook quickly isn't evidence that the environment is usable, so command ingress stays unavailable until the required filesystem state is healthy. On resume, the supervisor re-establishes the network-dependent mount state. The useful readiness question is whether a program can read its input, not just whether AWS reports a running VM.
+
+## Mounting the application’s files
+
+Our storage wasn't a directory of independently addressable S3 objects that we could just mount. Application metadata describes folders, files, ownership and grants. StorageService holds the immutable assets. A workspace path needs resolving through that content model before it identifies the bytes to read.
+
+[WebDAV](https://www.rfc-editor.org/rfc/rfc4918.html) gave us a protocol for exposing directory listings and file operations over HTTP. [rclone](https://rclone.org/commands/rclone_mount/) already knew how to turn a WebDAV remote into a filesystem using FUSE.
+
+We could implement application behavior on the server and let rclone handle the Linux-facing filesystem and cache. A read checks access and retrieves a registered asset; a write stores bytes and updates application metadata. Workspace content can then follow its processing and indexing lifecycle.
+
+That's why a bucket mount wouldn't have been enough. We needed the application's files and permissions, not a view of its underlying storage objects. Our application namespace and rclone's mounted VFS are two cooperating layers.
+
+<Image src="/blog/lambda-microvms-for-agent-sandboxing/architecture.svg" width={1000} height={620} alt="The agent uses shared paths through two routes: application file tools resolve durable resources directly, while programs inside a Lambda MicroVM access them through FUSE, rclone and WebDAV. Both routes retain application permissions and storage resolution." />
+
+*Two routes to durable application files. File tools don't need a VM for every operation; programs use the mount. Scratchpad stays on the VM's local disk.*
+
+### One namespace, several kinds of files
+
+The namespace ended up with six roots:
+
+| Path | Contents | Access |
+|---|---|---|
+| `/content/workspace/` | Workspace folders and files | Limited by the agent's grants |
+| `/conversation-inputs/` | Files uploaded to the conversation | Read-only |
+| `/skills/` | Effective skill files | Read-only |
+| `/tool-outputs/` | Files produced as tool results | Read-only |
+| `/outputs/` | Files the agent creates for the conversation | Writable |
+| `/scratchpad/` | Local working files | Writable, local to the VM generation |
+
+These roots distinguish source material, generated results and temporary work while retaining different rules underneath. Conversation inputs and tool outputs are read-only in both the public mount layout and the WebDAV mutation handlers.
+
+## Working through the filesystem
+
+### Permissions decide the reuse boundary
+
+A conversation turned out to be too broad a key for reusing a VM. **Two configured agents in the same conversation can have different knowledge grants.** We changed the session scope to include the configured agent, so runtime reuse followed the access boundary.
+
+File grants also meet assumptions made by ordinary software. Permission to overwrite one file doesn't necessarily include permission to create another beside it. A program that saves through a temporary sibling and a rename needs more than access to its destination. A folder grant addresses that permission problem; correct replacement semantics remain a separate consideration.
+
+The paths are consistent, but we aren't promising that every root behaves like local disk.
+
+### The computer and its files have different lifetimes
+
+Scratchpad is local working space for scripts and temporary files. It can survive suspending and resuming the same VM generation, but replacing that generation doesn't preserve it. Files successfully persisted in the application's storage have a different lifetime from the computer processing them.
+
+### Reading through the mount
+
+Suppose a program opens a granted workspace file that isn't already in its local cache. The data path looks like this:
+
+<Image src="/blog/lambda-microvms-for-agent-sandboxing/read-path.png" width={1100} height={570} alt="A cache-miss read: Python reads through rclone and FUSE; the WebDAV endpoint checks the agent’s grant and resolves the storage asset before returning its bytes." />
+
+*The data-read path on a cache miss. Bind mounts and any preceding metadata requests are omitted here.*
+
+rclone can issue metadata requests as well as the data read, depending on what it already knows. On the server, `PROPFIND` exposes the directory or file metadata and `GET` supplies the content.
+
+This doesn't require copying the entire workspace into the VM before a command can begin. The program accesses files through the mount as it needs them, with rclone caching locally. Nor does every intermediate byte need to pass through the model's context: a script can read and process data, then report the relevant result.
+
+Direct file tools can resolve durable paths without starting this VM, including preparing content for the model to read. Both routes address the same application resources.
+
+### Writing, uploading and presenting
+
+The mount's cache settings are small, but they affect when a program's work becomes visible to the platform. These are two of the defaults we pass to the resident rclone daemon:
+
+```text title="rclone environment defaults"
+RCLONE_VFS_CACHE_MODE=full
+RCLONE_VFS_WRITE_BACK=1s
+```
+
+Writes go through the local cache. Once a file is closed and idle for a second, it becomes eligible for upload. The upload still needs to finish.
+
+On a workspace overwrite, the DAV handler stores new asset bytes and updates the existing content record to point to them. It also marks the content for processing again. The path stays useful while the storage reference changes underneath it.
+
+Operations retain their own semantics: `write_file` rejects an existing path, while a mounted write can overwrite it.
+
+The important consequence for the workflow is that a command can finish before its files have finished uploading. Even reopening a file inside the VM may only verify the local cached bytes.
+
+A small sales-analysis run gives a concrete example. The agent read a synthetic CSV, cleaned it and generated an Excel workbook, a PNG chart and a Markdown report. Independent checks of the delivered files confirmed 18 retained records, four exclusions and NZ$1,012.50 in revenue.
+
+The command that generated and locally checked the three outputs took about 1.6 seconds. The remote uploads finished about a second after that command exited. The whole interaction took roughly 100 seconds, including earlier inspection, imports, model turns and the final response.
+
+The 1.6-second command produced and checked the files locally; it wasn't the whole task, and those checks didn't establish remote persistence at command completion.
+
+Our `Present` operation makes a file available to the response. For an existing durable output, it resolves the registration and returns a presentation reference; file bytes don't need to pass through the model's tool result. In the sales run, all three files were presented through their output paths after upload completed.
+
+Presenting a scratchpad file takes an extra step: retrieving it from the VM and registering a conversation output. That lets the agent keep temporary work local and deliberately deliver a result.
+
+Present isn't a blanket flush of the mount. Resolving a durable registration and completing a background write are different responsibilities.
+
+## Making the runtime fast enough to use
+
+Getting the mount to work left two different sources of latency: preparing a computer to accept commands, and the work each filesystem operation triggered once it was running.
+
+### Warm the work the program actually does
+
+For startup, the resident processes were only part of the answer. During image preparation we ask rclone to create a temporary mount against a local backend, read through it and unmount it. This exercises its mount and VFS setup without putting a conversation's credentials or files into the shared image. The real WebDAV mount still happens after assignment.
+
+We also exercise the document tooling: create a workbook, a document and a presentation, render a plot, and run PDF and scientific-library operations. Installing a package doesn't necessarily exercise the paths that its first useful operation will take. Font caches, Python bytecode and a prepared LibreOffice profile are other pieces we can arrange before a user is waiting.
+
+There is an important distinction between these warmups. Node and rclone remain running. Our Python warmup exits, and a later shell command starts a fresh Python interpreter. It therefore does **not** inherit that warmup process's imported modules. The preparation can leave useful files and exercise the environment, but claiming that we simply snapshot an already-imported pandas into every Python command would be wrong.
+
+This became a measurement problem as much as a startup problem. Provider launch, mount readiness, command completion and output upload are separate milestones. Improving one doesn't establish that the whole interaction became equally faster. The next post will go through the experiments and which costs we could actually move out of the user's wait.
+
+### A filesystem operation can become a database problem
+
+Once programs use the mount, directory listings and file metadata become part of their normal execution. Those operations can generate WebDAV `PROPFIND` requests. Each request needs an authorized view of the namespace, so the database path behind that authorization matters too.
+
+One optimization split session resolution from the wider permission query. We first look up the indexed session-token hash and resolve the session's identifiers. Then we check the authorization scope using those known identifiers. Previously, the database had to plan the broader query around the token filter; separating the lookup gave it a better starting point for the remaining joins. The access checks still happen.
+
+Around the deployment containing that change, the median successful production `PROPFIND` trace fell from **56.7 ms to 24.5 ms**. The 95th percentile fell from 120.3 ms to 43.4 ms.
+
+<Image src="/blog/lambda-microvms-for-agent-sandboxing/webdav-latency.png" width={1710} height={988} alt="Cumulative distributions of successful server-side WebDAV PROPFIND trace durations before and after deployment, with medians of 56.7 and 24.5 milliseconds." />
+
+*Successful server-side PROPFIND traces: 626 before and 176 after deployment. The observation windows were August 25, 2026, 20:30–22:50 UTC and August 25, 23:30–August 26, 01:10 UTC, excluding rollout. These are production observations with different request mixes; the deployment included other changes. They measure the server request, not an entire mounted operation or agent task.*
+
+That is a useful improvement at a boundary ordinary programs repeatedly cross. It also illustrates why optimizing this runtime reaches beyond the guest: a call that looks like filesystem metadata access can spend its time resolving application permissions in PostgreSQL.
+
+## Bringing existing connections into the guest
+
+Files solve one half of the integration problem. A program may also need to call an API using a connection the user has already authorized in Autohive.
+
+We built a separately gated credential-proxy path for that. When enabled, a compatible program can make a request to a supported provider without receiving the provider's OAuth token or API key. The platform gateway checks whether that session can use the connection and adds the credential to the outgoing request.
+
+The request takes this route:
+
+```text
+Unprivileged program
+  → guest network interception
+  → trusted local proxy
+  → Autohive gateway: authorize connection and inject credential
+  → provider API
+```
+
+An environment variable such as `HTTPS_PROXY` would be convenient, but it depends on the client's cooperation. Clients can ignore it or bypass it. Our Lambda implementation instead uses cgroup eBPF connect hooks to redirect covered TCP traffic on ports 80 and 443 from the command processes to the local proxy. The trusted supervisor is outside that interception scope so its own gateway requests don't loop back into the proxy.
+
+HTTPS adds another piece. The local proxy terminates the program's TLS connection using a guest CA whose public certificate is supplied through the supported trust-store settings. It forwards through the gateway, which makes the upstream request. These are separate TLS connections; certificate-pinned clients don't automatically work with this arrangement.
+
+There are three different credentials to keep straight. The program gets the public CA certificate. The trusted guest supervisor holds the CA private key and the gateway authentication material. The provider credential stays on the platform side. Keeping it out of the program doesn't mean the whole guest contains no sensitive material.
+
+The gateway checks the live session, the exact permitted origin, the configured agent's integration capability and the current linked connection before injecting a credential. An incoming host or authorization header isn't sufficient authority. When a client follows a redirect, the new request goes through the checks again.
+
+This also doesn't turn an authorized connection into a read-only connection. If the permitted API and connection support a write, a program can still request that write. Nor is this a claim that every network protocol goes through the gateway: the interception covers specific traffic, and other public egress remains. Revoking injection authority and blocking all network access are different controls.
+
+That's why the proxy warrants a full follow-up. But it belongs in the architecture here: the filesystem gives programs access to application files, and the gateway gives supported requests access to existing connections, with authorization enforced at each boundary.
+
+## Putting the pieces to work
+
+Making the presentation was a satisfying test of the whole arrangement. The agent could read source material, produce a deck and work through revisions using the environment the deck was describing.
+
+Lambda MicroVMs gave us a managed place to run the guest and reuse prepared state. The supervisor established each live assignment. WebDAV and rclone made application files usable by ordinary programs. The credential gateway extended that access to supported API connections without handing those programs the provider secrets.
+
+The work across the harness made those pieces usable together. A path could move from a file tool into Python and back into a presented result. Underneath that simple interaction were mount setup, permission queries, local caching and background uploads—the engineering details that made the presentation possible, and the places we had to look when it was slow or behaved unexpectedly.

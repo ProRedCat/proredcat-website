@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "ignorePatterns": [
+    ".next/**",
+    ".velite/**",
+    "node_modules/**",
+    "public/**",
+    "content/**",
+    "bun.lock",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "next-env.d.ts"
+  ]
+}

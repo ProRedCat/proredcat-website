@@ -18,7 +18,7 @@ OpenRouter now natively returns cache write tokens in the response. The `include
 
 Prompt caching is one of the biggest cost-savers when running LLMs, especially for agents. Without caching, each new message requires the model to re-ingest the entire conversation history. As your context grows, every request bills for the entire history, making it dramatically more expensive.
 
-### Prompt caching and Anthropic’s approach
+## Prompt caching and Anthropic’s approach
 
 Caching fixes this by allowing previously processed tokens to be reused at a much cheaper rate, often an order of magnitude cheaper than uncached input.
 
@@ -27,7 +27,7 @@ Most major providers handle this implicitly (OpenAI, Gemini, Grok, etc.). Anthro
 - cache reads (cheap)
 - cache writes (more expensive)
 
-### Missing cache write tokens
+## Missing cache write tokens
 
 Autohive serves Anthropic models through OpenRouter, since the Anthropic API is notoriously unreliable. OpenRouter serves using an OpenAI-compatible API, and because the OpenAI SDK has no concept of Anthropic-style cache control, I had to hand-roll a custom client to support this properly.
 
@@ -35,7 +35,7 @@ That part was fine. The real issue showed up afterward.
 
 OpenRouter does not return cache write tokens, only cache read tokens, even though Anthropic bills for both. And if you’re trying to do accurate per-request usage billing, missing that value becomes a problem.
 
-### A consistent billing model
+## A consistent billing model
 
 Most model providers don’t bill separately for cache writes, Anthropic is the only one that always charges for them. That means if you want to bill accurately, you must know how many cache write tokens were produced. This matters because the write cost is not trivial, Anthropic charges 1.25× the input price for a 5-minute TTL and 2× for a 1-hour TTL.
 
@@ -70,7 +70,7 @@ Since cache writes are the only unknown in the cost equation, we can simply deri
 
 Which is exactly what I did.
 
-### Solving for cache write tokens
+## Solving for cache write tokens
 
 Since OpenRouter returns the total cost and every other token component, cache writes are the only remaining unknown. So we can rearrange for $ W $ and solve for it directly.
 
@@ -92,7 +92,7 @@ Multiplying $\text{Cost}_{\text{USD}}$ by one million simply normalises it to ma
 
 Divide one by the other, and you get the number of cache write tokens created during the request.
 
-### Worked Example: Claude Sonnet 4.5
+## Worked Example: Claude Sonnet 4.5
 
 Now that we have the final equation, let’s run through a concrete example using Claude Sonnet 4.5 pricing. Anthropic publishes pricing in “per-million-token” units, so we convert those into per-token prices:
 
@@ -130,6 +130,6 @@ Meaning the request produced roughly 5.3k cache write tokens.
 
 With this we’ve now calculated the number of cache write tokens without ever being told the true value, which is exactly what we need to send to our billing system.
 
-### Closing thoughts
+## Closing thoughts
 
 This is one of those small engineering gaps that only shows up when you try to build a unified abstraction over a messy landscape of LLM providers. Every API exposes slightly different usage details, every vendor bills differently, and the burden ends up on platform engineers to make it all consistent and reliable. Solving cache writes algebraically turned out to be the cleanest approach for us, and it keeps Autohive’s billing predictable without depending on any provider quirks. As the ecosystem matures I’m hoping we see more standardisation, but until then, tricks like this get us most of the way there.
