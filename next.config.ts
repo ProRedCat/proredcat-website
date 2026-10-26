@@ -1,8 +1,9 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from "next";
+
 const nextConfig = {
   async headers() {
     if (process.env.VERCEL_ENV === "production") {
-      return []
+      return [];
     }
 
     return [
@@ -15,8 +16,8 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
-}
+} satisfies NextConfig;
 
-export default nextConfig
+export default nextConfig;
