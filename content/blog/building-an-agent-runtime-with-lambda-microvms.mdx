@@ -1,0 +1,140 @@
+---
+title: "Building an agent runtime with AWS Lambda MicroVMs"
+date: 2026-10-29
+description: "How we built Autohive's agent runtime with AWS Lambda MicroVMs, a mounted filesystem, snapshot prewarming and transparent credential proxying."
+shortDescription: "Building Autohive's agent runtime with mounted files, fast startup and access to existing connections."
+hero: /blog/lambda-microvm-runtime/hero-switchboard-colour.png
+published: true
+tags: ["AWS Lambda", "MicroVMs", "Agents", "Technical"]
+---
+
+## Why agents need a file system
+
+Coming from using agentic coding tools, I wanted agents in Autohive to be able to work with files in much the same way. Reading through a directory, writing a script, running it and inspecting the output are useful well beyond working on source code. Analysing a spreadsheet or generating a report involves the same process, and much of the software needed to do that already expects to read and write files.
+
+A filesystem gives the agent somewhere to do that work. It can explore the available files, inspect their contents, create working directories and save intermediate results. Combined with code execution, it can use existing programs and libraries to process those files, or write its own scripts when the task requires something more specific. We can support more of these tasks without having to build a dedicated integration for every operation.
+
+For example, an agent could read an uploaded spreadsheet with Python, save the analysis, generate charts and use those charts in a report. Those files remain available throughout the task. If the user asks for a different breakdown, the agent can update its script and regenerate the affected charts. The script, data and report give it something to continue working on across turns.
+
+This also changes how much of the work needs to pass through the model’s context. A script can process the entire spreadsheet while returning just the column names, a sample of the data or the calculated results for the model to inspect. The input and intermediate files remain available if it needs to investigate further. Manus describes a related approach in its [context engineering post](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus), where keeping a document’s path allows its contents to be removed from context and read again later. The agent can retain access to more information than it needs in any individual model request.
+
+Skills fit into this as well. Instructions, reference documents, templates and scripts can live together in a directory, with the agent reading what it needs for the current task. Anthropic’s [PDF skill example](https://www.anthropic.com/research/equipping-agents-for-the-real-world-with-agent-skills) includes a script for extracting form fields, which can run without loading either the script or the entire PDF into the model’s context. For a skill like this, the execution environment needs access to both the skill’s supporting files and the document it is working on.
+
+For this to work across a platform, its tools also need to work with that filesystem. An image returned by an integration should be available for a script to edit, and the resulting file should be something the agent can inspect and present to the user. The platform can handle the underlying storage and transfers without requiring the agent to coordinate them between each step.
+
+That was what I wanted to build for Autohive. Conversation inputs, workspace content and skills available through one filesystem, with an execution environment where agents could work on them. Running agent-written code meant that environment needed to be sandboxed, and the files exposed to it still needed to respect the user’s permissions.
+
+## Exposing Autohive's storage
+
+Autohive already had several places where users and agents could work with files. Each workspace had a content area, conversations could have uploaded attachments and files returned by tools, and skills could include instructions, scripts and supporting files. These were managed by different parts of the application, with a shared storage service holding the file contents underneath them.
+
+The way agents worked with those files followed those application boundaries. Creating a text file in the content area required `WriteContentAreaFile`, while updating an existing file used a separate content-area tool. We also added `SaveToContentArea` for copying existing files, including spreadsheets and PDFs, into workspace content. Each operation had its own inputs and rules about which files it could work with.
+
+There was a shared `ReadFile` tool, which accepted a storage ID and content owner type. It could resolve files from several parts of the application and check the agent’s access, but being able to read a file didn’t mean the agent could use it in a script. That required another tool to copy it into a container, where it would then be addressed by a local path. The agent had to keep track of both representations and choose the right operation for whichever environment held the file.
+
+The interface we settled on gave workspace content, conversation files and skills their own paths. Autohive would resolve a path through the part of the application responsible for that file, using the current conversation, workspace and agent to determine what was accessible.
+
+We also moved file resolution and access checks into the layer that prepared file inputs for tools. An agent could supply a path such as `/conversation-inputs/report.pdf`, and the harness would resolve it, check access and provide the contents in the format the integration expected. The integration could then work with that input without having to understand Autohive’s storage identifiers or determine which workspace the file belonged to. Writes similarly needed their destination resolved and checked before changing the file.
+
+This meant changing both sides of the tool interface. Tools needed to accept paths for file inputs, and files they returned needed paths the agent could use in subsequent operations. An integration could still require uploaded bytes or a URL, but the harness would handle that conversion.
+
+Making those paths work inside the harness was one part of the change. Programs running in an execution environment also needed to be able to open them through the operating system. That required exposing the application’s files as a mounted filesystem.
+
+## Prototyping with Fargate
+
+Fargate was the first solution I tried because Autohive already used it for container-backed integrations. We could start containers on demand, execute commands in them and stop them when they were no longer needed.
+
+With that already working, I could experiment with giving a general-purpose container access to the workspace content area and letting the agent run shell commands against those files.
+
+### Exposing the content area over WebDAV
+
+Autohive was already a web application serving pages, assets and API requests, so extending it to expose files over HTTP made sense. I didn’t want to reinvent the wheel with a custom protocol and filesystem client, so I looked into what already existed for accessing files this way.
+
+[WebDAV](https://www.rfc-editor.org/rfc/rfc4918.html) extends HTTP with operations for listing directories, writing files and moving them between folders, which matched what the content area already supported. With clients such as [rclone](https://rclone.org/) available to handle the filesystem side, I could add a WebDAV endpoint to Autohive and map its requests to the existing content-area operations.
+
+| Request | What Autohive did |
+|---|---|
+| `PROPFIND` | List a folder or return file metadata |
+| `GET` | Resolve the file and retrieve its contents from storage |
+| `PUT` | Store new contents and create or update the file’s metadata |
+| `MKCOL` / `MOVE` / `DELETE` | Create folders, move entries or delete them |
+
+For an overwrite, `PUT` saved a new storage asset and updated the existing file to reference it, then queued it for processing and indexing again. By mapping these requests to the operations we already had, I could expose the content area without changing how the storage engine stored its files.
+
+[rclone](https://rclone.org/commands/rclone_mount/) already supported WebDAV and could mount it at `/content/workspace` through FUSE. FUSE lets a userspace program handle filesystem operations, so programs such as Python and `grep` could access the remote files through local paths.
+
+An early prototype showed what this made possible when I gave an agent some dummy data to clean up. With no integrations added, it was able to find the files in the content area, clean them, create image assets and organise the results into folders, all through filesystem access and code execution.
+
+{/* Demo evidence and runtime attribution are recorded in docs/blog/drafts/fargate-section-research.md. */}
+
+### Where Fargate fell short
+
+The FUSE mount worked in local Docker, but moving it to Fargate ran into a restriction on the device access and capabilities available to containers. The mount needed `/dev/fuse` and `CAP_SYS_ADMIN`, neither of which [Fargate provides](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html).
+
+To keep experimenting on Fargate, I worked around that by copying the content area into the container and synchronizing changes back over WebDAV. This started as a periodic copy loop, then moved to [rclone bisync](https://rclone.org/bisync/#operation) to track changes on both sides, including deletions, with synchronization before and after commands as well.
+
+The synchronization was unreliable, and I could run `ls` and see an empty directory, then run it again a few seconds later and find the files. This left the agent able to run commands before the files it needed were available.
+
+Starting a fresh container also took around 40 seconds on average, before the command server’s health check. Because [Fargate doesn’t cache image layers between tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-pull-behavior.html), every new session had to pull its image from ECR, even if another conversation had just used the same image. It then had to start the container and initialize the command server before the agent could run anything.
+
+{/* The mean of six production starts was 38.9980557 seconds, rounded to around 40 seconds. Query and timestamp semantics are recorded in docs/blog/microvm-figures/fargate-startup-production.md. This measures requested_on to the observed ECS RUNNING transition, not command-server or filesystem readiness. It is not directly comparable with guest-only MicroVM timings. */}
+
+For someone asking an agent to work on a file in Autohive, that meant waiting most of a minute before it could even run its first command, even though the command itself was quick. Between that delay holding up the conversation and the unreliable synchronization, Fargate wasn’t working out for what I wanted to build. The WebDAV endpoint was working, and the prototype had shown what agents could do with access to the files. I just needed a runtime that could start quickly and provide `/dev/fuse` and `CAP_SYS_ADMIN`, so I could use that endpoint through a live mount.
+
+## AWS Lambda MicroVMs
+
+On June 22, AWS [announced Lambda MicroVMs](https://aws.amazon.com/blogs/aws/run-isolated-sandboxes-with-full-lifecycle-control-aws-lambda-introduces-microvms/), which seemed to line up with exactly what I was looking for. They supported elevated Linux capabilities, advertised near-instant startup from snapshots, and could suspend and resume while preserving the environment, so I started experimenting with moving the command server and WebDAV mount into a MicroVM.
+
+### A VM we could control
+
+Lambda MicroVMs are built on [Firecracker](https://firecracker-microvm.github.io/), a virtual machine monitor that uses Linux KVM to run lightweight VMs. Each VM has its own guest kernel, with the virtual machine providing the isolation boundary around the code running inside it. AWS manages the hosts and guest operating system, while we provide the application that runs inside the VM.
+
+Despite the Lambda name, this has a different execution model from a Lambda function. We run a server inside the VM and receive requests through its dedicated HTTPS endpoint, with explicit control over when that VM starts, suspends, resumes and terminates. For Autohive, that meant we could send several commands to the same environment throughout a conversation, keeping its files and running processes between requests.
+
+The image configuration also accepts `additionalOsCapabilities` set to `["ALL"]`, enabling [elevated Linux capabilities within the VM](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html). With that enabled, I could use `/dev/fuse` and `CAP_SYS_ADMIN` to mount the WebDAV endpoint. Those privileges were needed by the code managing the mount, so I kept that separate from the unprivileged process running the agent's commands.
+
+### Starting from a snapshot
+
+To create a MicroVM image, we provide a Dockerfile and application files in a zip uploaded to S3, and Lambda builds and starts the application inside a MicroVM. Once initialization is complete, it [captures the disk and memory state in a snapshot](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), which it uses to start new VMs from that image version. This includes the processes that were already running when the snapshot was taken, so they don't have to start again for each new VM.
+
+For Autohive, this meant I could initialize the command server, filesystem client and supporting tools before an agent needed them, then supply the conversation-specific configuration when a new VM was assigned work.
+
+Because [VMs started from the same image version inherit the same snapshot state](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images-snapshots.html), a conversation's files or access token must not be captured during the build. Autohive passes the WebDAV URL and a bearer token through `runHookPayload` when starting a VM, so the runtime can connect to the files it has been assigned after restoration.
+
+### Suspending and returning to the same work
+
+A new VM begins with the snapshot captured during the image build, while a suspended VM returns with the memory and disk state it had when it paused. Lambda can [suspend a VM after a configured idle period](https://docs.aws.amazon.com/lambda/latest/dg/microvms-how-it-works.html) and, with automatic resume enabled, wake it when another request arrives at its endpoint.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.png" width={1200} height={500} alt="A snapshot captured during the image build supplies the starting state of a new MicroVM, which can suspend and resume with its memory and disk state preserved, or terminate from either state. Provisioning and transitional states are omitted." />
+  <figcaption>New VMs start from the snapshot captured during the image build, while an existing VM resumes with the memory and disk state saved when it was suspended.</figcaption>
+</figure>
+
+For an agent conversation, this meant the VM could preserve a script and its intermediate files between commands, even if it had been suspended while waiting for the next request. Termination ends that environment, though, so work that needs to outlive it belongs in Autohive's storage, where a replacement VM can access it through the mount.
+
+To let our application prepare for these transitions, Lambda calls HTTP lifecycle hooks under `/aws/lambda-microvms/runtime/v1/` on a port we configure, so we can finish initialization, flush pending writes or reconnect before accepting more work.
+
+| Hook | When it runs | What it is for |
+|---|---|---|
+| `ready` | During image creation, before the snapshot | Finish preparing the application state to capture |
+| `validate` | On a VM restored from the new image | Check that the prepared application works after restoration |
+| `run` | When a new VM starts from the image | Apply the configuration supplied for this VM |
+| `suspend` | Before saving a running VM's state | Flush pending work and close external connections |
+| `resume` | When restoring a suspended VM | Reconnect and check that the environment can accept work |
+| `terminate` | Before releasing the VM | Perform final cleanup |
+
+The [build hooks](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html) control the reusable image, while the [runtime hooks](https://docs.aws.amazon.com/lambda/latest/dg/microvms-launching.html) deal with an individual VM. Restoring memory does not guarantee that a remote connection is still usable, so our mount needed explicit handling across suspend and resume. I put these hooks in a supervisor that could manage the mount, receive incoming requests and control when the command runner was ready to accept work.
+
+## Building the runtime inside the VM
+
+## Managing sandbox sessions
+
+## Mounting the content area
+
+## Optimizing startup times
+
+## Using Autohive connections from the sandbox
+
+## Browser use and more
+
+## Closing thoughts
