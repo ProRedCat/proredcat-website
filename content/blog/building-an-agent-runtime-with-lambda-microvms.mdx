@@ -108,6 +108,14 @@ Lambda MicroVMs are built on [Firecracker](https://firecracker-microvm.github.io
 
 Despite the Lambda name, this has a different execution model from a Lambda function. We run a server inside the VM and receive requests through its dedicated HTTPS endpoint, with explicit control over when that VM starts, suspends, resumes and terminates. For Autohive, that meant we could send several commands to the same environment throughout a conversation, keeping its files and running processes between requests.
 
+For Autohive, I configured a baseline of **1 vCPU and 2 GB of memory**. Lambda can [automatically scale that same VM up to four times its baseline](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), so the agent doesn't need a replacement environment just because one command needs more resources. The baseline is configured when building the image.
+
+| Configured baseline | Maximum automatic scaling |
+|---|---|
+| **1 vCPU / 2 GB — Autohive's configuration** | **4 vCPU / 8 GB** |
+| 2 vCPU / 4 GB | 8 vCPU / 16 GB |
+| 4 vCPU / 8 GB | 16 vCPU / 32 GB |
+
 The image configuration also accepts `additionalOsCapabilities` set to `["ALL"]`, enabling [elevated Linux capabilities within the VM](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html). With that enabled, I could use `/dev/fuse` and `CAP_SYS_ADMIN` to mount the WebDAV endpoint. Those privileges were needed by the code managing the mount, so I kept that separate from the unprivileged process running the agent's commands.
 
 ### Starting from a snapshot
@@ -128,6 +136,8 @@ A new VM begins with the snapshot captured during the image build, while a suspe
 </figure>
 
 For an agent conversation, this meant the VM could preserve a script and its intermediate files between commands, even if it had been suspended while waiting for the next request. AWS limits each VM to a [total lifespan of eight hours, including suspended time](https://docs.aws.amazon.com/lambda/latest/dg/microvms-launching.html), and the idle policy can terminate it sooner. Work that needs to outlive that environment belongs in Autohive's storage, where a replacement VM can access it through the mount.
+
+While a VM is running, AWS charges for its baseline resources even between commands, plus active usage above that baseline. At AWS's [published US East (N. Virginia) pricing](https://aws.amazon.com/lambda/pricing/), ten minutes running at our 1-vCPU, 2-GB baseline costs about **US$0.021 in compute**. That excludes additional resource usage, snapshot operations, storage and data transfer. Suspending the VM stops the compute charge while preserving its state, though saving, storing and restoring that snapshot has its own cost.
 
 To let our application prepare for these transitions, Lambda calls HTTP lifecycle hooks under `/aws/lambda-microvms/runtime/v1/` on a port we configure, so we can finish initialisation, flush pending writes or reconnect before accepting more work.
 
