@@ -19,7 +19,7 @@ I'll start with why we needed a filesystem and what I tried with Fargate, then w
 The diagram below shows the system we'll work towards, including what runs inside the MicroVM and how it connects back to Autohive for files and credentials.
 
 <figure>
-  <Image src="/blog/lambda-microvm-runtime/runtime-overview.svg" width={1200} height={760} alt="Autohive dispatches commands through the MicroVM's root supervisor to an unprivileged runner. File operations go through bind mounts and rclone to Autohive's WebDAV endpoint. The runner's HTTP and HTTPS requests are redirected to the supervisor proxy, then forwarded to Autohive's credential gateway, which adds provider credentials before sending them upstream." />
+  <Image src="/blog/lambda-microvm-runtime/runtime-overview.svg" width={1200} height={760} alt="Autohive dispatches commands through the MicroVM's root supervisor to an unprivileged runner. File operations go through bind mounts and rclone to Autohive's WebDAV endpoint. The runner's HTTP and HTTPS requests are redirected to a proxy in the same Go supervisor process, then forwarded to Autohive's credential gateway, which handles connection credentials and forwards requests to the public internet." />
   <figcaption>The command, file and network paths through the runtime. Arrows show requests, with responses returning along the same paths.</figcaption>
 </figure>
 
@@ -160,7 +160,7 @@ AWS still controls when the VM suspends, resumes or terminates. The supervisor h
 
 The command server runs as a dedicated `runner` user with UID and GID `10001`, so commands it launches inherit that identity. Before starting Node, the supervisor uses `setpriv` to change the user, clear supplementary groups and drop the capabilities inherited from the privileged runtime. The resulting command looks like this.
 
-```sh
+```sh showLineNumbers
 setpriv \
   --reuid=10001 --regid=10001 \
   --clear-groups \
@@ -235,7 +235,7 @@ Keeping inputs and outputs separate lets the agent produce a modified spreadshee
 
 The supervisor asks the resident rclone daemon to mount the combined WebDAV namespace at `/run/autohive/durable`. The mount request in Go supplies the remote configuration directly to rclone's `mount/mount` API.
 
-```go
+```go showLineNumbers
 fs := map[string]string{
     "type":         "webdav",
     "url":          cfg.davURL,
@@ -251,7 +251,7 @@ return err
 
 Here, `r.rc` sends an authenticated request to the daemon's local API. The WebDAV URL and bearer arrive with the VM's assignment, so the shared snapshot never needs a user's mount configuration. The supervisor then uses bind mounts to expose subdirectories at the paths above. A bind mount makes an existing directory accessible at another path, so `/skills` can expose the skill files from the internal mount with its own read-only setting.
 
-```sh
+```sh showLineNumbers
 mount --bind /run/autohive/durable/skills /skills
 mount -o remount,bind,ro /skills
 ```
@@ -277,7 +277,7 @@ With the live mount, programs could access files as they needed them without fir
 
 The cache also needed to account for changes made outside the sandbox. A user could upload another file during a conversation, or an integration could produce a new tool output that the next command needed to read. I initially had directory listings cached for five minutes, which was too long for this workflow, so I reduced that to two seconds and the kernel's attribute cache to one second.
 
-```text
+```text showLineNumbers
 RCLONE_VFS_CACHE_MODE=full
 RCLONE_DIR_CACHE_TIME=2s
 RCLONE_ATTR_TIMEOUT=1s
@@ -331,7 +331,7 @@ The command server was now running, but the Python scripts it launched still had
 
 I added a Python warmup script to `ready` and `validate` that performs those operations with generated data. It aggregates a dataframe, writes Parquet and spreadsheets, saves documents and renders PDFs and charts. For a Word document, that means going through the save operation as well as importing the library.
 
-```python
+```python showLineNumbers
 from docx import Document
 
 def warm_documents(directory):
@@ -387,7 +387,7 @@ There is still a long tail in getting the environment ready and starting the fir
 
 With agents able to run scripts against their files, I wanted them to use their existing Autohive connections from those scripts as well. An agent with a GitHub connection should be able to clone a private repository with the same command you'd use locally.
 
-```sh
+```sh showLineNumbers
 git clone https://github.com/example/private-repo.git
 ```
 
@@ -441,7 +441,7 @@ With this opening up so many possibilities, I started looking at what else we co
 
 I added Chromium and agent-browser to the image, with a browser-use skill explaining how to use them through the existing `bash` and `read_file` tools. For example, the agent can open a page, inspect its interactive elements and save a screenshot.
 
-```sh
+```sh showLineNumbers
 agent-browser open https://example.com
 agent-browser snapshot -i
 agent-browser screenshot /scratchpad/browser/artifacts/page.png
