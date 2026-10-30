@@ -1,7 +1,7 @@
 """Render the blog lifecycle diagram as editable SVG with portable outlined text.
 
 uv run --with fonttools python scripts/create-microvm-lifecycle.py
-node --input-type=module -e "import sharp from 'sharp'; await sharp('public/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.svg', {density:144}).png().toFile('public/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.png')"
+node --input-type=module -e "import sharp from 'sharp'; await sharp('public/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.svg', {density:144}).png().toFile('/tmp/microvm-snapshot-lifecycle.png')"
 """
 from pathlib import Path
 from html import escape

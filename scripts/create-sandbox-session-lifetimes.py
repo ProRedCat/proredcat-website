@@ -1,7 +1,7 @@
 """Create the illustrative session-lifetime diagram, not measured timing data.
 
 uv run --with fonttools python scripts/create-sandbox-session-lifetimes.py
-node --input-type=module -e "import sharp from 'sharp'; await sharp('public/blog/lambda-microvm-runtime/sandbox-session-lifetimes-v3.svg', {density:144}).png().toFile('public/blog/lambda-microvm-runtime/sandbox-session-lifetimes-v3.png')"
+node --input-type=module -e "import sharp from 'sharp'; await sharp('public/blog/lambda-microvm-runtime/sandbox-session-lifetimes-v3.svg', {density:144}).png().toFile('/tmp/sandbox-session-lifetimes-v3.png')"
 """
 from pathlib import Path
 from html import escape

@@ -8,79 +8,20 @@ published: true
 tags: ["AWS Lambda", "MicroVMs", "Agents", "Technical"]
 ---
 
-<nav aria-label="Table of contents" className="not-prose mb-12">
-  <p className="mb-5 text-lg font-semibold">Contents</p>
-  <ol className="list-decimal space-y-4 pl-5 text-sm leading-6 sm:columns-2 sm:gap-10">
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#why-agents-need-a-file-system">Why agents need a file system</a>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#exposing-autohives-storage">Exposing Autohive's storage</a>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#prototyping-with-fargate">Prototyping with Fargate</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#exposing-the-content-area-over-webdav">Exposing the content area over WebDAV</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#where-fargate-fell-short">Where Fargate fell short</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#aws-lambda-microvms">AWS Lambda MicroVMs</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#a-vm-we-could-control">A VM we could control</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#starting-from-a-snapshot">Starting from a snapshot</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#suspending-and-returning-to-the-same-work">Suspending and returning to the same work</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#building-the-runtime-inside-the-vm">Building the runtime inside the VM</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#running-commands-without-the-mount-privileges">Running commands without the mount privileges</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-credentials-and-mount-control-outside-the-runner">Keeping credentials and mount control outside the runner</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#waiting-for-an-environment-that-can-run-commands">Waiting for an environment that can run commands</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#managing-sandbox-sessions">Managing sandbox sessions</a>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#mounting-autohives-files">Mounting Autohive's files</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#choosing-the-filesystem-layout">Choosing the filesystem layout</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#exposing-the-directories-inside-the-vm">Exposing the directories inside the VM</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#caching-and-reconnecting">Caching and reconnecting</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#optimizing-startup-times">Optimizing startup times</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#finding-where-the-time-went">Finding where the time went</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#preparing-the-snapshot">Preparing the snapshot</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#warming-the-work-the-agent-will-do">Warming the work the agent will do</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#finding-delays-outside-the-vm">Finding delays outside the VM</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#the-deployed-result">The deployed result</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#using-autohive-connections-from-the-sandbox">Using Autohive connections from the sandbox</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#using-the-connections-the-agent-already-has">Using the connections the agent already has</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#intercepting-requests-on-lambda">Intercepting requests on Lambda</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-credentials-outside-the-vm">Keeping credentials outside the VM</a></li>
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-access-tied-to-the-session">Keeping access tied to the session</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#browser-use-and-more">Browser use and more</a>
-      <ul className="mt-1 space-y-1 pl-4">
-        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#building-on-this-with-auto">Building on this with Auto</a></li>
-      </ul>
-    </li>
-    <li className="break-inside-avoid pl-1">
-      <a className="font-semibold underline-offset-4 hover:underline" href="#closing-thoughts">Closing thoughts</a>
-    </li>
-  </ol>
-</nav>
+A lot of my focus lately at Autohive has been on improving the agent harness and the experience of using agents on the platform. We already had ways for agents to run code, but there wasn't one execution environment where they could work with conversation inputs, workspace files and skills together. I wanted to give them a computer with those files available in one place, so they could use them in scripts and continue working with the results.
+
+The system I built for this uses AWS Lambda MicroVMs. Agents can now run skill scripts against uploaded files, clone private repositories using their Autohive connections and use a browser in the same environment.
+
+Getting this fast enough to use during a conversation was a big part of the work. The runtime now takes a median of **2.5 seconds from requesting a new environment to starting its first command**, including mounting the agent's files. That took changes to how I prepared the snapshot, started the processes inside the VM and served the files from Autohive.
+
+I'll start with why we needed a filesystem and what I tried with Fargate, then work through the runtime, mounts, startup improvements and credential proxy. If you're here for the Lambda details, you can [jump straight to AWS Lambda MicroVMs](#aws-lambda-microvms).
+
+The diagram below shows the system we'll work towards, including what runs inside the MicroVM and how it connects back to Autohive for files and credentials.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/runtime-overview.svg" width={1200} height={760} alt="Autohive dispatches commands through the MicroVM's root supervisor to an unprivileged runner. File operations go through bind mounts and rclone to Autohive's WebDAV endpoint. The runner's HTTP and HTTPS requests are redirected to the supervisor proxy, then forwarded to Autohive's credential gateway, which adds provider credentials before sending them upstream." />
+  <figcaption>The command, file and network paths through the runtime. Arrows show requests, with responses returning along the same paths.</figcaption>
+</figure>
 
 ## Why agents need a file system
 
@@ -145,19 +86,21 @@ An early prototype showed what this made possible when I gave an agent some dumm
 
 The FUSE mount worked in local Docker, but moving it to Fargate ran into a restriction on the device access and capabilities available to containers. The mount needed `/dev/fuse` and `CAP_SYS_ADMIN`, neither of which [Fargate provides](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-tasks-services.html).
 
-To keep experimenting on Fargate, I worked around that by copying the content area into the container and synchronizing changes back over WebDAV. This started as a periodic copy loop, then moved to [rclone bisync](https://rclone.org/bisync/#operation) to track changes on both sides, including deletions, with synchronization before and after commands as well.
+To keep experimenting on Fargate, I worked around that by copying the content area into the container and synchronising changes back over WebDAV. This started as a periodic copy loop, then moved to [rclone bisync](https://rclone.org/bisync/#operation) to track changes on both sides, including deletions, with synchronisation before and after commands as well.
 
-The synchronization was unreliable, and I could run `ls` and see an empty directory, then run it again a few seconds later and find the files. This left the agent able to run commands before the files it needed were available.
+I could run `ls` and get an empty directory, then run the same command a few seconds later and find the files. That's a pretty confusing environment to give an agent, especially when we'd already told it the files were ready to use.
 
-Starting a fresh container also took around 40 seconds on average, before the command server’s health check. Because [Fargate doesn’t cache image layers between tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-pull-behavior.html), every new session had to pull its image from ECR, even if another conversation had just used the same image. It then had to start the container and initialize the command server before the agent could run anything.
+Starting a fresh container also took around 40 seconds on average, before the command server’s health check. Because [Fargate doesn’t cache image layers between tasks](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-pull-behavior.html), every new session had to pull its image from ECR, even if another conversation had just used the same image. It then had to start the container and initialise the command server before the agent could run anything.
 
 {/* The mean of six production starts was 38.9980557 seconds, rounded to around 40 seconds. Query and timestamp semantics are recorded in docs/blog/microvm-figures/fargate-startup-production.md. This measures requested_on to the observed ECS RUNNING transition, not command-server or filesystem readiness. It is not directly comparable with guest-only MicroVM timings. */}
 
-For someone asking an agent to work on a file in Autohive, that meant waiting most of a minute before it could even run its first command, even though the command itself was quick. Between that delay holding up the conversation and the unreliable synchronization, Fargate wasn’t working out for what I wanted to build. The WebDAV endpoint was working, and the prototype had shown what agents could do with access to the files. I just needed a runtime that could start quickly and provide `/dev/fuse` and `CAP_SYS_ADMIN`, so I could use that endpoint through a live mount.
+For someone asking an agent to work on a file in Autohive, that meant waiting most of a minute before it could even run its first command, even though the command itself was quick. Between that delay holding up the conversation and the unreliable synchronisation, Fargate wasn’t working out for what I wanted to build. The WebDAV endpoint was working, and the prototype had shown what agents could do with access to the files. I just needed a runtime that could start quickly and provide `/dev/fuse` and `CAP_SYS_ADMIN`, so I could use that endpoint through a live mount.
 
 ## AWS Lambda MicroVMs
 
-On June 22, AWS [announced Lambda MicroVMs](https://aws.amazon.com/blogs/aws/run-isolated-sandboxes-with-full-lifecycle-control-aws-lambda-introduces-microvms/), which seemed to line up with exactly what I was looking for. They supported elevated Linux capabilities, advertised near-instant startup from snapshots, and could suspend and resume while preserving the environment, so I started experimenting with moving the command server and WebDAV mount into a MicroVM.
+On 22 June 2026, AWS [announced Lambda MicroVMs](https://aws.amazon.com/blogs/aws/run-isolated-sandboxes-with-full-lifecycle-control-aws-lambda-introduces-microvms/), which seemed to line up with exactly what I was looking for. They supported elevated Linux capabilities, advertised near-instant startup from snapshots, and could suspend and resume while preserving the environment, so I started experimenting with moving the command server and WebDAV mount into a MicroVM.
+
+Keeping this in AWS also meant I could use the infrastructure we already had. I wanted control over the environment inside the VM, but managing Firecracker hosts or a pool of warm EC2 instances wasn't something I wanted to take on for this project. Lambda handled that side while giving me the mount privileges and snapshot lifecycle I needed.
 
 ### A VM we could control
 
@@ -169,9 +112,9 @@ The image configuration also accepts `additionalOsCapabilities` set to `["ALL"]`
 
 ### Starting from a snapshot
 
-To create a MicroVM image, we provide a Dockerfile and application files in a zip uploaded to S3, and Lambda builds and starts the application inside a MicroVM. Once initialization is complete, it [captures the disk and memory state in a snapshot](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), which it uses to start new VMs from that image version. This includes the processes that were already running when the snapshot was taken, so they don't have to start again for each new VM.
+To create a MicroVM image, we provide a Dockerfile and application files in a zip uploaded to S3, and Lambda builds and starts the application inside a MicroVM. Once initialisation is complete, it [captures the disk and memory state in a snapshot](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), which it uses to start new VMs from that image version. This includes the processes that were already running when the snapshot was taken, so they don't have to start again for each new VM.
 
-For Autohive, this meant I could initialize the command server, filesystem client and supporting tools before an agent needed them, then supply the conversation-specific configuration when a new VM was assigned work.
+For Autohive, this meant I could initialise the command server, filesystem client and supporting tools before an agent needed them, then supply the conversation-specific configuration when a new VM was assigned work.
 
 Because [VMs started from the same image version inherit the same snapshot state](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images-snapshots.html), a conversation's files or access token must not be captured during the build. Autohive passes the WebDAV URL and a bearer token through `runHookPayload` when starting a VM, so the runtime can connect to the files it has been assigned after restoration.
 
@@ -184,9 +127,9 @@ A new VM begins with the snapshot captured during the image build, while a suspe
   <figcaption>New VMs start from the snapshot captured during the image build, while an existing VM resumes with the memory and disk state saved when it was suspended.</figcaption>
 </figure>
 
-For an agent conversation, this meant the VM could preserve a script and its intermediate files between commands, even if it had been suspended while waiting for the next request. Termination ends that environment, though, so work that needs to outlive it belongs in Autohive's storage, where a replacement VM can access it through the mount.
+For an agent conversation, this meant the VM could preserve a script and its intermediate files between commands, even if it had been suspended while waiting for the next request. AWS limits each VM to a [total lifespan of eight hours, including suspended time](https://docs.aws.amazon.com/lambda/latest/dg/microvms-launching.html), and the idle policy can terminate it sooner. Work that needs to outlive that environment belongs in Autohive's storage, where a replacement VM can access it through the mount.
 
-To let our application prepare for these transitions, Lambda calls HTTP lifecycle hooks under `/aws/lambda-microvms/runtime/v1/` on a port we configure, so we can finish initialization, flush pending writes or reconnect before accepting more work.
+To let our application prepare for these transitions, Lambda calls HTTP lifecycle hooks under `/aws/lambda-microvms/runtime/v1/` on a port we configure, so we can finish initialisation, flush pending writes or reconnect before accepting more work.
 
 | Hook | When it runs | What it is for |
 |---|---|---|
@@ -236,7 +179,7 @@ This applies before the command server starts, so its shell commands, Python scr
 
 The command server passes its environment into the commands it starts, which means anything placed there is available to agent-written code. I therefore kept the session bearer in the supervisor and passed the WebDAV connection details directly to the root filesystem client, without putting them in the runner's environment or writing them into the shared snapshot.
 
-For incoming command requests, the supervisor checks the session bearer and replaces it with the command server's internal token before forwarding the request. The runner can then stay initialized in the snapshot without knowing which conversation it will serve. Its internal token is available to code running under the same user, so it isn't a credential we rely on to separate the agent from the privileged parts of the runtime.
+For incoming command requests, the supervisor checks the session bearer and replaces it with the command server's internal token before forwarding the request. The runner can then stay initialised in the snapshot without knowing which conversation it will serve. Its internal token is available to code running under the same user, so it isn't a credential we rely on to separate the agent from the privileged parts of the runtime.
 
 I used [`rclone rcd`](https://rclone.org/commands/rclone_rcd/), which keeps rclone running and exposes an API the supervisor can use to create and remove mounts. That API listens on localhost, but code inside the VM can also make localhost requests, so it still needs authentication. The supervisor generates a credential for the API and passes it only to the rclone process, separately from the environment supplied to the command server.
 
@@ -290,7 +233,23 @@ Keeping inputs and outputs separate lets the agent produce a modified spreadshee
 
 ### Exposing the directories inside the VM
 
-The supervisor mounts the combined WebDAV namespace once at `/run/autohive/durable`, then uses bind mounts to expose its subdirectories at the paths above. A bind mount makes an existing directory accessible at another path, so `/skills` can expose the skill files from the internal mount with its own read-only setting.
+The supervisor asks the resident rclone daemon to mount the combined WebDAV namespace at `/run/autohive/durable`. The mount request in Go supplies the remote configuration directly to rclone's `mount/mount` API.
+
+```go
+fs := map[string]string{
+    "type":         "webdav",
+    "url":          cfg.davURL,
+    "vendor":       "other",
+    "bearer_token": cfg.bearer,
+}
+_, err := r.rc("mount/mount", map[string]any{
+    "fs":         fs,
+    "mountPoint": cfg.mountPoint,
+})
+return err
+```
+
+Here, `r.rc` sends an authenticated request to the daemon's local API. The WebDAV URL and bearer arrive with the VM's assignment, so the shared snapshot never needs a user's mount configuration. The supervisor then uses bind mounts to expose subdirectories at the paths above. A bind mount makes an existing directory accessible at another path, so `/skills` can expose the skill files from the internal mount with its own read-only setting.
 
 ```sh
 mount --bind /run/autohive/durable/skills /skills
@@ -306,6 +265,13 @@ One issue I ran into was where to attach the read-only tool-output directory. I 
 {/* The composite mount was introduced in Autohive PR #5394. PR #5572 records why tool outputs moved to a separate top-level bind. */}
 
 ### Caching and reconnecting
+
+When a program reads a content area file that rclone hasn't cached, the mount turns that read into a WebDAV request. Autohive checks the agent's access and resolves the file's storage reference before returning the bytes to the program.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/mounted-file-read.svg" width={1100} height={540} alt="A Python file read on a cache miss passes through rclone and FUSE to a WebDAV GET request. Autohive checks the agent's access, resolves the storage reference and fetches the file. The bytes return through rclone to Python." />
+  <figcaption>Reading a content area file through the mount on a cache miss. Bind mounts and preceding metadata requests are omitted.</figcaption>
+</figure>
 
 With the live mount, programs could access files as they needed them without first copying the entire content area into the VM. I used rclone's full VFS cache so repeated reads could reuse downloaded data, and programs could use operations such as seeking within a file while writing it. Without write caching, [rclone restricts the file operations available to applications](https://rclone.org/commands/rclone_mount/#vfs-file-caching).
 
@@ -324,9 +290,9 @@ Writes are buffered locally as well. With the one-second write-back setting, a c
 
 Before the VM suspends, the supervisor removes the public bind mounts in reverse order, then unmounts the underlying FUSE filesystem, leaving the rclone daemon running. On resume, it uses the retained WebDAV URL and bearer to create the mount again and restore the public bindings. This reconnects the filesystem without assuming that a network connection from before suspension is still usable, and command requests remain gated on the filesystem readiness checks described earlier.
 
-## Optimizing startup times
+## Optimising startup times
 
-The VM could respond quickly while the agent was still waiting for its first command. Starting rclone and Node, establishing the mount and loading Python libraries each added delays, so I needed timings around those steps to understand what was holding up execution.
+The VM was up quickly, but the agent was still waiting on its first command. Starting rclone and Node, establishing the mount and loading Python libraries each added delays, so I needed timings around those steps to understand what was holding up execution.
 
 ### Finding where the time went
 
@@ -343,7 +309,7 @@ The fastest result with both hooks was around 1.4 seconds, but another run of th
 
 Restoring a snapshot doesn't require every part of it to be immediately available in memory. Firecracker supports [loading snapshot memory on demand](https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md), where accessing a page that hasn't been loaded causes a page fault and waits for that data to become available. A process starting for the first time can touch many pages across its executable, shared libraries and supporting files before it gets to the operation we asked it to perform.
 
-I moved Node and rclone into supervisor startup, so the snapshot would capture the command server already listening and rclone's `rcd` daemon ready to accept mount requests. A new session could then configure its mount through the existing daemon and use the running command server, removing both process initializations from its startup path.
+I moved Node and rclone into supervisor startup, so the snapshot would capture the command server already listening and rclone's `rcd` daemon ready to accept mount requests. A new session could then configure its mount through the existing daemon and use the running command server, removing both process initialisations from its startup path.
 
 That gave each stage of the image build and startup a specific job.
 
@@ -355,13 +321,13 @@ That gave each stage of the image build and startup a specific job.
 | `validate` | Run those workloads again on a VM restored from the snapshot |
 | `run` | Apply the conversation's configuration and connect its mounted files |
 
-For rclone, the warmup creates a temporary FUSE mount backed by a local directory. This exercises the daemon's mount and filesystem code without connecting to a user's content area during the build. The temporary mount is removed afterwards, while the initialized daemon remains running for the snapshot.
+For rclone, the warmup creates a temporary FUSE mount backed by a local directory. This exercises the daemon's mount and filesystem code without connecting to a user's content area during the build. The temporary mount is removed afterwards, while the initialised daemon remains running for the snapshot.
 
-AWS [tracks the snapshot regions accessed during validation and optimizes their retrieval during startup](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), so `validate` needs to exercise the restored environment beyond checking that its server responds. I run the same warmup operations in both hooks, first to prepare the state before capture, then to exercise it after restoration.
+AWS [tracks the snapshot regions accessed during validation and optimises their retrieval during startup](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), so `validate` needs to exercise the restored environment beyond checking that its server responds. I run the same warmup operations in both hooks, first to prepare the state before capture, then to exercise it after restoration.
 
 ### Warming the work the agent will do
 
-The command server was now running, but the Python scripts it launched still had to initialize their own interpreter and libraries. Importing those libraries during warmup helped, but left code for operations such as saving documents and rendering charts untouched until the agent first used it.
+The command server was now running, but the Python scripts it launched still had to initialise their own interpreter and libraries. Importing those libraries during warmup helped, but left code for operations such as saving documents and rendering charts untouched until the agent first used it.
 
 I added a Python warmup script to `ready` and `validate` that performs those operations with generated data. It aggregates a dataframe, writes Parquet and spreadsheets, saves documents and renders PDFs and charts. For a Word document, that means going through the save operation as well as importing the library.
 
@@ -387,17 +353,17 @@ To check the effect on fresh Python processes, I compared no warmup, imports and
 
 Once process startup was faster, the first WebDAV listing became more visible in the timings. Before the mount could become ready, Autohive still had to authenticate the request, resolve its access and return the directory contents.
 
-Raygun APM helped me follow those requests into the application and database, alongside the supervisor's timings in CloudWatch. The [faster APM agent in v3](https://raygun.com/blog/raygun-apm-agent-3-0-14/) lets us keep profiling enabled in production with little overhead, so I could investigate the requests agents were actually making.
+I work at Raygun as well as Autohive, so Raygun APM was a natural choice for following those requests into the application and database. The [lower overhead of the v3 agent](https://raygun.com/blog/raygun-apm-agent-3-0-14/) meant I could keep it running in production and compare the request traces with the supervisor's timings in CloudWatch.
 
 Directory listings were repeating workspace permission queries for each child, even though the request had already established that access. I moved those checks into request scope while retaining the agent's file and folder restrictions, removing the repeated queries as the listing grew.
 
-Consolidating the authorization queries introduced another problem. A request could take around 56 ms even though its visible PostgreSQL execution span was tiny. Additional timings and the generated SQL showed that PostgreSQL was spending around 31 ms planning the combined query. Splitting out the indexed session-token lookup from the remaining permission query reduced that planning work to around 4 ms, while keeping the number of queries bounded.
+Consolidating the authorisation queries introduced another problem. The request took around 56 ms, but the PostgreSQL execution span was tiny, so where was the rest of that time going? Additional timings and the generated SQL showed that PostgreSQL was spending around 31 ms just planning the combined query. Splitting out the indexed session-token lookup from the remaining permission query brought that down to around 4 ms, while keeping the number of queries bounded.
 
 After deploying the query-planning fix, the median successful `PROPFIND` request fell from **57 ms to 24 ms**, with the 95th percentile falling from **119 ms to 43 ms**. WebDAV uses `PROPFIND` to list directories, something agents do frequently as they explore the available files, so this also speeds up directory listings throughout a session whenever rclone needs to fetch them. Having both the mount timings and production traces let me follow the delay into the database instead of treating it as another VM startup problem.
 
 <figure>
   <Image src="/blog/lambda-microvm-runtime/webdav-optimization-20261030.svg" width={1600} height={832} alt="WebDAV request latency before and after the query-planning fix. The median falls from 56.7 to 24.5 milliseconds. Violin shapes show the distributions and individual dots show the slowest one percent." />
-  <figcaption>Production directory-listing latency before and after fixing query planning in the consolidated authorization query.</figcaption>
+  <figcaption>Production directory-listing latency before and after fixing query planning in the consolidated authorisation query.</figcaption>
 </figure>
 
 ### The deployed result
@@ -442,7 +408,7 @@ This lets a Python script call the API and Git clone a repository using the same
 
 ### Intercepting requests on Lambda
 
-I initially wanted to use `nftables` to redirect the runner's traffic, but Lambda's managed kernel didn't support it, and the legacy `iptables` alternative was missing the `xt_owner` module needed to match the runner's user. Having elevated capabilities inside the VM didn't make those kernel features available.
+I initially wanted to use `nftables` to redirect the runner's traffic, but Lambda's managed kernel didn't support it. I tried the legacy `iptables` route as well, only to find it was missing `xt_owner`, the module needed to match the runner's user. Even with all the available capabilities enabled, I couldn't use kernel features that weren't there.
 
 Setting `HTTP_PROXY` and `HTTPS_PROXY` would only work for programs that respected those variables. I wanted interception to happen without depending on how an agent's script or its HTTP library opened connections, so I used eBPF hooks attached to a Linux cgroup containing the command runner.
 
@@ -461,13 +427,13 @@ Redirecting a connection to the supervisor means the proxy needs to recover wher
 
 The supervisor then forwards the method and body to the gateway, carrying the original scheme, hostname and path in internal headers. A separate gateway bearer identifies the VM session, so Autohive can look up its assigned agent and connection grants without trusting the command to supply that identity. That bearer stays in the supervisor and uses its own header, separate from any `Authorization` header the client sent for the upstream service.
 
-At the gateway, the destination must match an exact origin granted to the session before it receives a platform credential. For a matching connection, the gateway removes the client's authorization and cookies, then sets the provider's authorization using the route's Bearer or Basic format. Requests without a usable grant can still reach public services, including package registries, without receiving an Autohive credential.
+At the gateway, the destination must match an exact origin granted to the session before it receives a platform credential. For a matching connection, the gateway removes the client's authorisation and cookies, then sets the provider's authorisation using the route's Bearer or Basic format. Requests without a usable grant can still reach public services, including package registries, without receiving an Autohive credential.
 
 Some clients require a credential before they'll make a request at all. The GitHub CLI, `gh`, was one of these, so the runtime supplies a non-secret `GH_TOKEN` placeholder that the gateway replaces before forwarding to GitHub. [Hermes uses placeholder tokens with its host-side proxy](https://hermes-agent.nousresearch.com/docs/user-guide/egress/iron-proxy) for the same purpose, allowing existing clients to send authenticated requests without giving them the real credential.
 
 ### Keeping access tied to the session
 
-Keeping authorization in the gateway means it can check the active session, agent capability, configured origin and selected connection on every request. Removing a connection or its route stops subsequent requests from receiving that credential, and terminating the session invalidates the supervisor's gateway token.
+Keeping authorisation in the gateway means it can check the active session, agent capability, configured origin and selected connection on every request. Removing a connection or its route stops subsequent requests from receiving that credential, and terminating the session invalidates the supervisor's gateway token.
 
 ## Browser use and more
 
