@@ -8,20 +8,77 @@ published: true
 tags: ["AWS Lambda", "MicroVMs", "Agents", "Technical"]
 ---
 
-<nav aria-label="Table of contents" className="mb-10">
-  <p className="font-semibold">Contents</p>
-  <ol className="text-sm sm:columns-2">
-    <li className="break-inside-avoid"><a href="#why-agents-need-a-file-system">Why agents need a file system</a></li>
-    <li className="break-inside-avoid"><a href="#exposing-autohives-storage">Exposing Autohive's storage</a></li>
-    <li className="break-inside-avoid"><a href="#prototyping-with-fargate">Prototyping with Fargate</a></li>
-    <li className="break-inside-avoid"><a href="#aws-lambda-microvms">AWS Lambda MicroVMs</a></li>
-    <li className="break-inside-avoid"><a href="#building-the-runtime-inside-the-vm">Building the runtime inside the VM</a></li>
-    <li className="break-inside-avoid"><a href="#managing-sandbox-sessions">Managing sandbox sessions</a></li>
-    <li className="break-inside-avoid"><a href="#mounting-autohives-files">Mounting Autohive's files</a></li>
-    <li className="break-inside-avoid"><a href="#optimizing-startup-times">Optimizing startup times</a></li>
-    <li className="break-inside-avoid"><a href="#using-autohive-connections-from-the-sandbox">Using Autohive connections from the sandbox</a></li>
-    <li className="break-inside-avoid"><a href="#browser-use-and-more">Browser use and more</a></li>
-    <li className="break-inside-avoid"><a href="#closing-thoughts">Closing thoughts</a></li>
+<nav aria-label="Table of contents" className="not-prose mb-12">
+  <p className="mb-5 text-lg font-semibold">Contents</p>
+  <ol className="list-decimal space-y-4 pl-5 text-sm leading-6 sm:columns-2 sm:gap-10">
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#why-agents-need-a-file-system">Why agents need a file system</a>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#exposing-autohives-storage">Exposing Autohive's storage</a>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#prototyping-with-fargate">Prototyping with Fargate</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#exposing-the-content-area-over-webdav">Exposing the content area over WebDAV</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#where-fargate-fell-short">Where Fargate fell short</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#aws-lambda-microvms">AWS Lambda MicroVMs</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#a-vm-we-could-control">A VM we could control</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#starting-from-a-snapshot">Starting from a snapshot</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#suspending-and-returning-to-the-same-work">Suspending and returning to the same work</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#building-the-runtime-inside-the-vm">Building the runtime inside the VM</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#running-commands-without-the-mount-privileges">Running commands without the mount privileges</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-credentials-and-mount-control-outside-the-runner">Keeping credentials and mount control outside the runner</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#waiting-for-an-environment-that-can-run-commands">Waiting for an environment that can run commands</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#managing-sandbox-sessions">Managing sandbox sessions</a>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#mounting-autohives-files">Mounting Autohive's files</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#choosing-the-filesystem-layout">Choosing the filesystem layout</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#exposing-the-directories-inside-the-vm">Exposing the directories inside the VM</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#caching-and-reconnecting">Caching and reconnecting</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#optimizing-startup-times">Optimizing startup times</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#finding-where-the-time-went">Finding where the time went</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#preparing-the-snapshot">Preparing the snapshot</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#warming-the-work-the-agent-will-do">Warming the work the agent will do</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#finding-delays-outside-the-vm">Finding delays outside the VM</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#the-deployed-result">The deployed result</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#using-autohive-connections-from-the-sandbox">Using Autohive connections from the sandbox</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#using-the-connections-the-agent-already-has">Using the connections the agent already has</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#intercepting-requests-on-lambda">Intercepting requests on Lambda</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-credentials-outside-the-vm">Keeping credentials outside the VM</a></li>
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#keeping-access-tied-to-the-session">Keeping access tied to the session</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#browser-use-and-more">Browser use and more</a>
+      <ul className="mt-1 space-y-1 pl-4">
+        <li><a className="text-primary-navy-dark/80 underline-offset-4 hover:underline" href="#building-on-this-with-auto">Building on this with Auto</a></li>
+      </ul>
+    </li>
+    <li className="break-inside-avoid pl-1">
+      <a className="font-semibold underline-offset-4 hover:underline" href="#closing-thoughts">Closing thoughts</a>
+    </li>
   </ol>
 </nav>
 
