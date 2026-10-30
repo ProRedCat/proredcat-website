@@ -106,7 +106,7 @@ Because [VMs started from the same image version inherit the same snapshot state
 A new VM begins with the snapshot captured during the image build, while a suspended VM returns with the memory and disk state it had when it paused. Lambda can [suspend a VM after a configured idle period](https://docs.aws.amazon.com/lambda/latest/dg/microvms-how-it-works.html) and, with automatic resume enabled, wake it when another request arrives at its endpoint.
 
 <figure>
-  <Image src="/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.png" width={1200} height={500} alt="A snapshot captured during the image build supplies the starting state of a new MicroVM, which can suspend and resume with its memory and disk state preserved, or terminate from either state. Provisioning and transitional states are omitted." />
+  <Image src="/blog/lambda-microvm-runtime/microvm-snapshot-lifecycle.svg" width={1200} height={500} alt="A snapshot captured during the image build supplies the starting state of a new MicroVM, which can suspend and resume with its memory and disk state preserved, or terminate from either state. Provisioning and transitional states are omitted." />
   <figcaption>New VMs start from the snapshot captured during the image build, while an existing VM resumes with the memory and disk state saved when it was suspended.</figcaption>
 </figure>
 
@@ -127,14 +127,302 @@ The [build hooks](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.h
 
 ## Building the runtime inside the VM
 
+Lambda MicroVMs gave me the privileges I needed to mount Autohive's files, but those privileges also needed to be kept away from the code the agent was running. Giving that code root access would let it change mounts, read credentials held by the runtime and modify the programs responsible for managing its environment, even though it was isolated from other VMs.
+
+I split the runtime into a root supervisor written in Go and a command server running as an unprivileged user. The supervisor handles incoming requests and the lifecycle hooks described above, while the command server starts the shell commands supplied by the agent. The filesystem client runs alongside them as a separate root process, controlled by the supervisor.
+
+| Process | Runs as | Responsibility |
+|---|---|---|
+| Go supervisor | Root | Handle lifecycle hooks, manage mounts and forward command requests |
+| `rclone rcd` | Root | Connect to WebDAV and serve the mounted filesystem |
+| Node command server | Unprivileged user | Start agent commands and return their output and exit status |
+
+AWS still controls when the VM suspends, resumes or terminates. The supervisor handles what our application needs to do around those events, such as reconnecting the filesystem after restoration, and keeps the command server running if it exits.
+
+### Running commands without the mount privileges
+
+The command server runs as a dedicated `runner` user with UID and GID `10001`, so commands it launches inherit that identity. Before starting Node, the supervisor uses `setpriv` to change the user, clear supplementary groups and drop the capabilities inherited from the privileged runtime. The resulting command looks like this.
+
+```sh
+setpriv \
+  --reuid=10001 --regid=10001 \
+  --clear-groups \
+  --no-new-privs \
+  --inh-caps=-all \
+  --ambient-caps=-all \
+  --bounding-set=-all \
+  -- node /app/exec-server.js
+```
+
+Linux capabilities grant individual privileges, including the `CAP_SYS_ADMIN` needed for our mount. Clearing the inheritable, ambient and bounding sets prevents those capabilities from being carried into programs the runner executes. The [`no_new_privs` flag](https://docs.kernel.org/userspace-api/no_new_privs.html) also prevents execution of a setuid binary or a file with capabilities from granting additional privileges, and remains set when the process launches children.
+
+This applies before the command server starts, so its shell commands, Python scripts and any programs they launch all inherit the restrictions. The Dockerfile checks the UID, `NoNewPrivs`, effective capabilities and capability bounding set using the same launch flags during the build, so a change that breaks that configuration fails before the image is used by an agent.
+
+### Keeping credentials and mount control outside the runner
+
+The command server passes its environment into the commands it starts, which means anything placed there is available to agent-written code. I therefore kept the session bearer in the supervisor and passed the WebDAV connection details directly to the root filesystem client, without putting them in the runner's environment or writing them into the shared snapshot.
+
+For incoming command requests, the supervisor checks the session bearer and replaces it with the command server's internal token before forwarding the request. The runner can then stay initialized in the snapshot without knowing which conversation it will serve. Its internal token is available to code running under the same user, so it isn't a credential we rely on to separate the agent from the privileged parts of the runtime.
+
+I used [`rclone rcd`](https://rclone.org/commands/rclone_rcd/), which keeps rclone running and exposes an API the supervisor can use to create and remove mounts. That API listens on localhost, but code inside the VM can also make localhost requests, so it still needs authentication. The supervisor generates a credential for the API and passes it only to the rclone process, separately from the environment supplied to the command server.
+
+The filesystem layout needs the same separation. The full WebDAV mount lives at `/run/autohive/durable`, beneath a root-only directory, and its cache is also root-only. The supervisor exposes selected directories through public bind mounts, including read-only bindings for skills, conversation inputs and tool outputs. Protecting the underlying mount matters because a read-only public path would achieve little if the agent could reach the same files through another writable path.
+
+### Waiting for an environment that can run commands
+
+When building a sandbox, you need to decide what must be usable before accepting the first command. For Autohive, the agent needed to be able to run `ls` immediately and see the files available to it, so a readiness check that only confirmed the command server was listening wouldn't tell us enough. If we accepted commands before the filesystem was mounted, a successful `ls` could return an empty mount-point directory and leave the agent thinking there were no files to work with.
+
+After starting or resuming a VM, the supervisor waits until it can list the WebDAV mount, verify the required directories and establish their public bindings. It also checks that the local scratchpad exists, and command requests receive `503` until the filesystem is ready. These checks exercise the filesystem the agent will use, instead of relying on whether the mount process started successfully.
+
+The same reasoning applies to anything else a command depends on, so the supervisor also checks the credential interception setup before forwarding requests when that feature is active. Readiness needs to cover the environment we're promising the agent, including after a resume when processes may already be running but their external connections need to be re-established.
+
+Once a command is running, the Node server streams its output back to Autohive and reports its exit status. It tracks each execution with a timeout and sends cancellation to the command's process group if the request disconnects or runs out of time, so stopping a tool call also attempts to stop the programs it launched. These controls handle the execution of a command within the sandbox, while the VM's lifetime can span several commands and pauses throughout a conversation.
+
 ## Managing sandbox sessions
 
-## Mounting the content area
+In Autohive, I scoped each sandbox session to a conversation and a configured agent, with subsequent tool calls from that agent reusing the same environment.
+
+The configured agent matters here because agents can be granted access to specific subfolders of the content area instead of the whole content area. Two agents in the same conversation can therefore have different file access, and sharing a VM would let one agent read files the other had already copied into its local filesystem. Giving each agent its own environment lets me scope the mount to that agent's access and keep those local files separate.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/sandbox-session-lifetimes-v3.svg" width={1200} height={550} alt="An example conversation with separate sandbox timelines for Agent A and Agent B. Agent A's first VM leads to an explicit termination step, then its next command creates VM 2 with fresh local state. Agent B uses a separate VM, while uploaded files and saved outputs remain in Autohive storage across VM replacements." />
+  <figcaption>Each agent has its own environment within the conversation, and replacing a VM loses its local state while files saved to Autohive remain available through the agent's permitted mounts.</figcaption>
+</figure>
+
+Autohive keeps track of the VM assigned to each pair and routes subsequent calls to it, while AWS handles idle suspension and resumption when traffic returns. If the VM has terminated, the next command gets a new one rather than trying to resume an environment that no longer exists.
+
+When a conversation outlives its VM, the replacement reconnects to Autohive's files with the configured agent's access, but starts without the previous VM's scratchpad or running processes. Work that needs to survive replacement therefore has to be written to the mounted storage, which makes the choice between a local working directory and a durable output directory part of the filesystem design.
+
+## Mounting Autohive's files
+
+The filesystem needed to bring together files from several parts of Autohive, with different rules about what the agent could do with them. An uploaded spreadsheet should be available to analyse without changing the original, and a skill's scripts should be executable without the agent modifying the skill itself. The agent also needed somewhere to save its results, even if it hadn't been granted access to the content area.
+
+### Choosing the filesystem layout
+
+I extended the WebDAV endpoint from the Fargate prototype to expose conversation files and skills alongside workspace content, giving each its own directory in the mounted filesystem.
+
+| Path | Contents | Access |
+|---|---|---|
+| `/content/workspace` | Content area folders and files | Read-write within the agent's permitted content |
+| `/conversation-inputs` | Files uploaded to the conversation | Read-only |
+| `/skills` | Skill instructions, scripts and supporting files | Read-only |
+| `/tool-outputs` | Files returned by tools | Read-only |
+| `/outputs` | Files the agent creates for the conversation | Read-write |
+| `/scratchpad` | Local scripts and intermediate files | Read-write, local to the VM |
+
+Keeping inputs and outputs separate lets the agent produce a modified spreadsheet in `/outputs` while retaining the uploaded version in `/conversation-inputs`. A script from `/skills` can work with those same files and save its results without modifying the skill's directory.
+
+`/scratchpad` is the command runner's working directory on the VM's local disk. Scripts and intermediate files can stay there without every change going through WebDAV, while results intended to remain in the conversation can be written to `/outputs`.
+
+### Exposing the directories inside the VM
+
+The supervisor mounts the combined WebDAV namespace once at `/run/autohive/durable`, then uses bind mounts to expose its subdirectories at the paths above. A bind mount makes an existing directory accessible at another path, so `/skills` can expose the skill files from the internal mount with its own read-only setting.
+
+```sh
+mount --bind /run/autohive/durable/skills /skills
+mount -o remount,bind,ro /skills
+```
+
+The same setup applies to conversation inputs and tool outputs, while workspace content and generated outputs have writable bindings. The runner can only reach these public paths, as the internal mount remains beneath the root-only directory described earlier.
+
+WebDAV also enforces these rules when handling requests. It rejects writes to skills, conversation inputs and tool outputs, and checks the configured agent's content area access before reading or modifying workspace files. A writable workspace mount therefore doesn't grant access to the entire content area, as each remote operation still goes through the application's access checks.
+
+One issue I ran into was where to attach the read-only tool-output directory. I originally placed it at `/outputs/tool-outputs`, beneath the writable outputs mount. When rclone revalidated that parent directory's cache, the nested bind could become detached because its target was a directory entry managed by FUSE. Moving it to `/tool-outputs` put the bind target on the VM's root filesystem, where it no longer depended on the parent mount's directory cache.
+
+{/* The composite mount was introduced in Autohive PR #5394. PR #5572 records why tool outputs moved to a separate top-level bind. */}
+
+### Caching and reconnecting
+
+With the live mount, programs could access files as they needed them without first copying the entire content area into the VM. I used rclone's full VFS cache so repeated reads could reuse downloaded data, and programs could use operations such as seeking within a file while writing it. Without write caching, [rclone restricts the file operations available to applications](https://rclone.org/commands/rclone_mount/#vfs-file-caching).
+
+The cache also needed to account for changes made outside the sandbox. A user could upload another file during a conversation, or an integration could produce a new tool output that the next command needed to read. I initially had directory listings cached for five minutes, which was too long for this workflow, so I reduced that to two seconds and the kernel's attribute cache to one second.
+
+```text
+RCLONE_VFS_CACHE_MODE=full
+RCLONE_DIR_CACHE_TIME=2s
+RCLONE_ATTR_TIMEOUT=1s
+RCLONE_VFS_WRITE_BACK=1s
+```
+
+When a program accesses a directory after its cached listing expires, rclone requests a fresh listing through WebDAV. This refreshes the directories being used without continuously polling or scanning the entire content area.
+
+Writes are buffered locally as well. With the one-second write-back setting, a closed file becomes eligible for upload after it has been idle for that period, so a command can finish before its output has reached Autohive's storage. Once WebDAV receives the upload, it stores the contents through the application, including updating the content record and queuing processing when a workspace file changes.
+
+Before the VM suspends, the supervisor removes the public bind mounts in reverse order, then unmounts the underlying FUSE filesystem, leaving the rclone daemon running. On resume, it uses the retained WebDAV URL and bearer to create the mount again and restore the public bindings. This reconnects the filesystem without assuming that a network connection from before suspension is still usable, and command requests remain gated on the filesystem readiness checks described earlier.
 
 ## Optimizing startup times
 
+The VM could respond quickly while the agent was still waiting for its first command. Starting rclone and Node, establishing the mount and loading Python libraries each added delays, so I needed timings around those steps to understand what was holding up execution.
+
+### Finding where the time went
+
+The early runtime started rclone and the Node command server after the VM had been restored. A command that executed in a few milliseconds could take 9 to 40 seconds to complete from entry into the `run` hook, with most of that time spent preparing the environment. Prewarming during `ready` and exercising the restored image during `validate` reduced the delay, but startup times still varied considerably.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/startup-history-20261030.svg" width={1800} height={630} alt="Early startup measurements, from about 9 to 40 seconds in the initial runtime to about 1.4 to 8.1 seconds with ready and validate warmup." />
+  <figcaption>Time from guest run-hook entry to first command completion, excluding earlier AWS provisioning.</figcaption>
+</figure>
+
+The fastest result with both hooks was around 1.4 seconds, but another run of that version took almost eight seconds inside the VM. Starting the same processes after every restore was still leaving work on the path to the first command.
+
+### Preparing the snapshot
+
+Restoring a snapshot doesn't require every part of it to be immediately available in memory. Firecracker supports [loading snapshot memory on demand](https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md), where accessing a page that hasn't been loaded causes a page fault and waits for that data to become available. A process starting for the first time can touch many pages across its executable, shared libraries and supporting files before it gets to the operation we asked it to perform.
+
+I moved Node and rclone into supervisor startup, so the snapshot would capture the command server already listening and rclone's `rcd` daemon ready to accept mount requests. A new session could then configure its mount through the existing daemon and use the running command server, removing both process initializations from its startup path.
+
+That gave each stage of the image build and startup a specific job.
+
+| Stage | Work done for Autohive |
+|---|---|
+| Dockerfile | Install the tools and libraries, compile Python bytecode and build font caches |
+| Application startup | Start the supervisor, rclone daemon and non-root command server |
+| `ready` | Exercise the filesystem client and representative tool workloads before snapshot capture |
+| `validate` | Run those workloads again on a VM restored from the snapshot |
+| `run` | Apply the conversation's configuration and connect its mounted files |
+
+For rclone, the warmup creates a temporary FUSE mount backed by a local directory. This exercises the daemon's mount and filesystem code without connecting to a user's content area during the build. The temporary mount is removed afterwards, while the initialized daemon remains running for the snapshot.
+
+AWS [tracks the snapshot regions accessed during validation and optimizes their retrieval during startup](https://docs.aws.amazon.com/lambda/latest/dg/microvms-images.html), so `validate` needs to exercise the restored environment beyond checking that its server responds. I run the same warmup operations in both hooks, first to prepare the state before capture, then to exercise it after restoration.
+
+### Warming the work the agent will do
+
+The command server was now running, but the Python scripts it launched still had to initialize their own interpreter and libraries. Importing those libraries during warmup helped, but left code for operations such as saving documents and rendering charts untouched until the agent first used it.
+
+I added a Python warmup script to `ready` and `validate` that performs those operations with generated data. It aggregates a dataframe, writes Parquet and spreadsheets, saves documents and renders PDFs and charts. For a Word document, that means going through the save operation as well as importing the library.
+
+```python
+from docx import Document
+
+def warm_documents(directory):
+    document = Document()
+    document.add_paragraph("warm")
+    document.save(directory / "warm.docx")
+```
+
+The script runs as the non-root runner and removes its temporary files afterwards. Once the process exits, the executable and library pages it read can remain in the guest's page cache and be captured in the snapshot. The agent's next Python process still imports its own modules, but can reuse those cached pages, with validation also exercising their retrieval after restoration.
+
+To check the effect on fresh Python processes, I compared no warmup, imports and these workloads in an isolated image. The data and Parquet workload took a median of **10 seconds without warming, 1.26 seconds with imports and 478 ms with workload warming**.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/python-prewarming-20261030.svg" width={1800} height={1206} alt="Python workload durations with no warmup, import-only warmup and representative workload warmup. The largest reductions are in data processing, PDFs, images and scientific workloads." />
+  <figcaption>Python workload timings, including process startup and exit. Points show individual measurements and lines span them.</figcaption>
+</figure>
+
+### Finding delays outside the VM
+
+Once process startup was faster, the first WebDAV listing became more visible in the timings. Before the mount could become ready, Autohive still had to authenticate the request, resolve its access and return the directory contents.
+
+Raygun APM helped me follow those requests into the application and database, alongside the supervisor's timings in CloudWatch. The [faster APM agent in v3](https://raygun.com/blog/raygun-apm-agent-3-0-14/) lets us keep profiling enabled in production with little overhead, so I could investigate the requests agents were actually making.
+
+Directory listings were repeating workspace permission queries for each child, even though the request had already established that access. I moved those checks into request scope while retaining the agent's file and folder restrictions, removing the repeated queries as the listing grew.
+
+Consolidating the authorization queries introduced another problem. A request could take around 56 ms even though its visible PostgreSQL execution span was tiny. Additional timings and the generated SQL showed that PostgreSQL was spending around 31 ms planning the combined query. Splitting out the indexed session-token lookup from the remaining permission query reduced that planning work to around 4 ms, while keeping the number of queries bounded.
+
+After deploying the query-planning fix, the median successful `PROPFIND` request fell from **57 ms to 24 ms**, with the 95th percentile falling from **119 ms to 43 ms**. WebDAV uses `PROPFIND` to list directories, something agents do frequently as they explore the available files, so this also speeds up directory listings throughout a session whenever rclone needs to fetch them. Having both the mount timings and production traces let me follow the delay into the database instead of treating it as another VM startup problem.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/webdav-optimization-20261030.svg" width={1600} height={832} alt="WebDAV request latency before and after the query-planning fix. The median falls from 56.7 to 24.5 milliseconds. Violin shapes show the distributions and individual dots show the slowest one percent." />
+  <figcaption>Production directory-listing latency before and after fixing query planning in the consolidated authorization query.</figcaption>
+</figure>
+
+### The deployed result
+
+With this deployed, the median time to a new environment with its files mounted was **2.2 seconds**, and to completing its first command was **3.1 seconds including that startup**. An agent working on an uploaded spreadsheet could get into the file within a few seconds, then continue its analysis in the same environment.
+
+I measured this by joining Autohive's VM request timestamps to the production logs for mount readiness and command execution. These timings include AWS startup, connecting the filesystem, dispatching the command and running it, ending when the command completes inside the VM. They exclude the model's time deciding what to run and delivery of the result back to the agent.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/production-first-command-distribution-20261030.svg" width={1600} height={864} alt="Production startup distributions on a logarithmic time axis. Median and 95th-percentile timings are 2.23 and 3.36 seconds for filesystem readiness, 2.49 and 4.14 seconds for first-command start, and 3.11 and 9.28 seconds for first-command completion. All timings include AWS startup." />
+  <figcaption>Production timings from requesting a new environment, with medians and 95th percentiles marked.</figcaption>
+</figure>
+
+The first-command timings include agents' actual work, so longer-running scripts account for part of the wider spread in completion times.
+
+There is still a long tail in getting the environment ready and starting the first command, which I'd like to investigate further. Those delays happen before the command runs, so they aren't explained by longer-running scripts. Overall though, a median of **2.5 seconds from requesting a new environment to running the first command**, with the agent's files mounted and ready to use, is incredibly fast for what we're setting up.
+
+{/* Evidence, query definitions and chart sources are in docs/blog/startup-research-2026-10-30. The final figure uses production-end-to-end.json, joining the original guest cohort to persisted RequestedOn by exact VM ID. Historical and production durations have different endpoints and must not be presented as a single before/after speedup. WebDAV numbers describe the PR #5607 planning fix in deployment 3.1.412, following #5594 and #5600. Python chart uses the complete CloudWatch process-duration cohort, not the partially recovered conversation output or pooled Python-only medians. */}
+
 ## Using Autohive connections from the sandbox
+
+With agents able to run scripts against their files, I wanted them to use their existing Autohive connections from those scripts as well. An agent with a GitHub connection should be able to clone a private repository with the same command you'd use locally.
+
+```sh
+git clone https://github.com/example/private-repo.git
+```
+
+Passing the access token into the environment would make that work, but any code running there could read it and send it elsewhere. I also didn't want the agent to have to retrieve credentials, configure Git or choose a different way to authenticate each program it used. Autohive already managed those connections, so I wanted it to authenticate requests without giving the provider credentials to the sandbox.
+
+### Using the connections the agent already has
+
+I added provider routes that describe which origins support credential injection and how to authenticate requests to them. GitHub needed two routes, using the same connection's access token in different formats.
+
+| Origin | Authentication | Used for |
+|---|---|---|
+| `https://api.github.com` | Bearer token | GitHub API requests |
+| `https://github.com` | Basic auth with `x-access-token` as the username | Git over HTTPS |
+
+The route enables support for that origin, but access still comes from the agent's configuration. Autohive resolves the provider from an attached integration or an integration action activated through a skill, then uses the specific connection selected for it. If that configuration doesn't resolve to a single connection, the sandbox doesn't get to pick an arbitrary account from the workspace. The connection's permissions apply to these requests, so a GitHub connection with write access also lets the agent push changes without receiving the token itself.
+
+This lets a Python script call the API and Git clone a repository using the same connection, without the agent handling either authentication format. Adding support for another provider using Bearer or Basic authentication means configuring its origin and credential format, rather than teaching each program how to retrieve an Autohive connection.
+
+### Intercepting requests on Lambda
+
+I initially wanted to use `nftables` to redirect the runner's traffic, but Lambda's managed kernel didn't support it, and the legacy `iptables` alternative was missing the `xt_owner` module needed to match the runner's user. Having elevated capabilities inside the VM didn't make those kernel features available.
+
+Setting `HTTP_PROXY` and `HTTPS_PROXY` would only work for programs that respected those variables. I wanted interception to happen without depending on how an agent's script or its HTTP library opened connections, so I used eBPF hooks attached to a Linux cgroup containing the command runner.
+
+The `connect4` and `connect6` hooks rewrite TCP connections on ports 80 and 443 to the supervisor's local proxy. The supervisor places the runner in that cgroup before executing it, and any child processes inherit the same membership. The supervisor itself stays outside the cgroup so its requests to the gateway aren't redirected back into its own proxy.
+
+### Keeping credentials outside the VM
+
+I split the proxy between the supervisor inside the VM and a credential gateway in Autohive. The supervisor intercepts requests, while the gateway resolves the connection and adds its credentials before forwarding to the provider. This keeps OAuth tokens and refresh handling alongside Autohive's existing connection management, without copying them into each VM. [Cloudflare's outbound Workers](https://developers.cloudflare.com/changelog/post/2026-04-13-sandbox-outbound-workers-tls-auth/) provide a similar place outside the sandbox to authenticate outgoing requests.
+
+<figure>
+  <Image src="/blog/lambda-microvm-runtime/credential-gateway-flow.svg" width={1200} height={360} alt="Inside the MicroVM, an unprivileged command runner sends requests through the root supervisor's proxy. The proxy forwards to Autohive's gateway outside the VM, where the connection credential is added before the request reaches GitHub." />
+  <figcaption>The supervisor forwards the request, while Autohive checks access and adds the provider credential outside the VM.</figcaption>
+</figure>
+
+Redirecting a connection to the supervisor means the proxy needs to recover where the client intended to send it. For HTTP it reads the `Host` header, and for HTTPS it uses the hostname supplied through Server Name Indication (SNI). The runtime configures certificate trust for Git, Python and Node so their HTTPS requests can pass through the proxy without the agent changing each command.
+
+The supervisor then forwards the method and body to the gateway, carrying the original scheme, hostname and path in internal headers. A separate gateway bearer identifies the VM session, so Autohive can look up its assigned agent and connection grants without trusting the command to supply that identity. That bearer stays in the supervisor and uses its own header, separate from any `Authorization` header the client sent for the upstream service.
+
+At the gateway, the destination must match an exact origin granted to the session before it receives a platform credential. For a matching connection, the gateway removes the client's authorization and cookies, then sets the provider's authorization using the route's Bearer or Basic format. Requests without a usable grant can still reach public services, including package registries, without receiving an Autohive credential.
+
+Some clients require a credential before they'll make a request at all. The GitHub CLI, `gh`, was one of these, so the runtime supplies a non-secret `GH_TOKEN` placeholder that the gateway replaces before forwarding to GitHub. [Hermes uses placeholder tokens with its host-side proxy](https://hermes-agent.nousresearch.com/docs/user-guide/egress/iron-proxy) for the same purpose, allowing existing clients to send authenticated requests without giving them the real credential.
+
+### Keeping access tied to the session
+
+Keeping authorization in the gateway means it can check the active session, agent capability, configured origin and selected connection on every request. Removing a connection or its route stops subsequent requests from receiving that credential, and terminating the session invalidates the supervisor's gateway token.
 
 ## Browser use and more
 
+With this opening up so many possibilities, I started looking at what else we could add. Most recently, I added browser use for our agents through [Vercel's agent-browser](https://github.com/vercel-labs/agent-browser). It provides a command-line interface for opening pages, inspecting their controls, filling forms and taking screenshots, so it fits into the shell access the agent already has.
+
+I added Chromium and agent-browser to the image, with a browser-use skill explaining how to use them through the existing `bash` and `read_file` tools. For example, the agent can open a page, inspect its interactive elements and save a screenshot.
+
+```sh
+agent-browser open https://example.com
+agent-browser snapshot -i
+agent-browser screenshot /scratchpad/browser/artifacts/page.png
+```
+
+The snapshot returns references to the page's controls that the agent can use in subsequent commands. The screenshot is a file that `read_file` can put into the model's context, and downloads land in the same filesystem as the agent's scripts. A spreadsheet downloaded through the browser can then go through the analysis and reporting process described at the start of this post, without another transfer between execution environments.
+
+There was still some work needed to fit the browser into the runtime. I took control of launching Chromium so it runs as the unprivileged runner with its own browser sandbox enabled, and keeps its profile under `/scratchpad/browser`. The build warmup exercises rendering, form input and screenshots, then closes the browser and removes its temporary profile before snapshot capture. Using the same snapshot preparation and prewarming techniques described earlier, adding Chromium had a negligible effect on VM startup times, with the browser itself starting when the agent first needs it.
+
+### Building on this with Auto
+
+This runtime has also made much of what I wanted from [Auto, Autohive's main assistant](https://blog.autohive.com/autohive-auto-a-general-work-agent-that-builds-your-agents/), possible. The aim is for someone to ask for help with their work and have Auto use the files, skills and connections available in their workspace, without first having to build an agent for that particular task. It can use a skill's instructions and scripts, work on the user's files and produce something they can continue refining in the conversation.
+
+We've also extended the filesystem to support authoring agents and skills. Auto can work on an agent definition in `/agent-drafts`, or a skill's instructions, scripts and supporting files in `/skill-drafts`, using the same file operations as the rest of its work. These are working copies, with an explicit save operation that validates and applies the changes through Autohive's existing services. Installed skills stay read-only, so editing a draft doesn't change the version another agent is using halfway through its task.
+
 ## Closing thoughts
+
+I'm really proud of this work and how much it has changed what we can do with Autohive. What started with wanting agents to open files and run scripts has grown into the runtime behind much of what makes Auto useful. Bringing together MicroVMs, skills, connections and browser use has been a huge step forward for the platform, and it's been really satisfying to build so much of that.
+
+Seeing my coworkers use Auto has been one of the best parts. They've been creating slide decks, reviewing our website and asking it to turn those findings into designs, then sharing how impressed they are with the results and how much smoother the work feels. After spending so much time on mounts, snapshots and startup timings, seeing that translate into something people enjoy using means a lot. A big thanks to Andre as well for his work on the file tools and the wider harness changes that helped bring this together.
+
+This is also the longest blog post I've written so far, and it's been through a lot of revisions. I went back and forth on splitting it into several posts, but kept it together because the decisions make more sense alongside each other. The filesystem affects the runtime, the runtime affects startup, and the connections determine what the code running there can actually do.
+
+If you've made it this far, thanks for reading! I hope this gives you a useful reference for approaching agent sandboxing and building with Lambda MicroVMs, including the details I would have liked to find when I started. I've got more posts on the way, so keep an eye out for those.
