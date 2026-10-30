@@ -3,10 +3,27 @@ title: "Building an agent runtime with AWS Lambda MicroVMs"
 date: 2026-10-29
 description: "How we built Autohive's agent runtime with AWS Lambda MicroVMs, a mounted filesystem, snapshot prewarming and transparent credential proxying."
 shortDescription: "Building Autohive's agent runtime with mounted files, fast startup and access to existing connections."
-hero: /blog/lambda-microvm-runtime/hero-switchboard-colour.png
+hero: /blog/lambda-microvm-runtime/hero-switchboard-colour.jpg
 published: true
 tags: ["AWS Lambda", "MicroVMs", "Agents", "Technical"]
 ---
+
+<nav aria-label="Table of contents" className="mb-10">
+  <p className="font-semibold">Contents</p>
+  <ol className="text-sm sm:columns-2">
+    <li className="break-inside-avoid"><a href="#why-agents-need-a-file-system">Why agents need a file system</a></li>
+    <li className="break-inside-avoid"><a href="#exposing-autohives-storage">Exposing Autohive's storage</a></li>
+    <li className="break-inside-avoid"><a href="#prototyping-with-fargate">Prototyping with Fargate</a></li>
+    <li className="break-inside-avoid"><a href="#aws-lambda-microvms">AWS Lambda MicroVMs</a></li>
+    <li className="break-inside-avoid"><a href="#building-the-runtime-inside-the-vm">Building the runtime inside the VM</a></li>
+    <li className="break-inside-avoid"><a href="#managing-sandbox-sessions">Managing sandbox sessions</a></li>
+    <li className="break-inside-avoid"><a href="#mounting-autohives-files">Mounting Autohive's files</a></li>
+    <li className="break-inside-avoid"><a href="#optimizing-startup-times">Optimizing startup times</a></li>
+    <li className="break-inside-avoid"><a href="#using-autohive-connections-from-the-sandbox">Using Autohive connections from the sandbox</a></li>
+    <li className="break-inside-avoid"><a href="#browser-use-and-more">Browser use and more</a></li>
+    <li className="break-inside-avoid"><a href="#closing-thoughts">Closing thoughts</a></li>
+  </ol>
+</nav>
 
 ## Why agents need a file system
 
