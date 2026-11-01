@@ -117,3 +117,6 @@ next-env.d.ts
 
 # velite files
 .velite
+
+# Local blog asset experiments and full-resolution sources
+/docs/blog/asset-archive/
